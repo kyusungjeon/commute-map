@@ -55,7 +55,6 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     <div id="saved"></div>
     <p class="note">소요시간은 ODsay 대중교통 길찾기 결과 중 가장 빠른 경로 기준이며, 실제 배차와 혼잡에 따라 달라집니다.</p>
     <p class="note">지도 © NAVER · 대중교통 경로 powered by <a href="https://www.odsay.com" target="_blank" rel="noopener">www.ODsay.com</a> · 역 위치 출처: 서울 열린데이터광장</p>
-    <datalist id="stnList"></datalist>
   </div>
   <div id="map"></div>
 </div>
@@ -77,16 +76,18 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     var box=$("places");box.textContent="";box.style.display="flex";box.style.flexDirection="column";box.style.gap="10px";
     places.forEach(function(p,i){
       var d=el("div","place");var b=el("b");var dot=el("span","dot");dot.style.background=COLORS[i];b.appendChild(dot);b.appendChild(document.createTextNode(p.role));d.appendChild(b);
-      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="역 이름 또는 주소 (예: 강남역, 테헤란로 152)";inp.setAttribute("aria-label",p.role+" 역 이름 또는 주소");inp.setAttribute("list","stnList");
-      inp.addEventListener("input",function(){p.q=inp.value;p.cands=null});
+      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="역 이름 또는 주소 (예: 강남역, 테헤란로 152)";inp.setAttribute("aria-label",p.role+" 역 이름 또는 주소");inp.autocomplete="off";
+      inp.addEventListener("input",function(){p.q=inp.value;p.cands=suggest(inp.value);drawCands()});
       inp.addEventListener("keydown",function(e){if(e.key==="Enter")find(i)});
       var fb=el("button","ghost","찾기");fb.type="button";fb.addEventListener("click",function(){find(i)});
       r.appendChild(inp);r.appendChild(fb);d.appendChild(r);
       var pb=el("button",picking===i?"on":"ghost",picking===i?"지도를 눌러 위치를 정하세요":"지도에서 직접 찍기");pb.type="button";
       pb.addEventListener("click",function(){picking=picking===i?-1:i;renderPlaces()});d.appendChild(pb);
-      if(p.cands&&p.cands.length){var cw=el("div","row");cw.style.flexWrap="wrap";
-        p.cands.forEach(function(st){var cb=el("button","ghost",stLabel(st));cb.type="button";cb.style.padding="5px 9px";cb.style.fontSize="13px";
-          cb.addEventListener("click",function(){pickStation(i,st)});cw.appendChild(cb)});d.appendChild(cw)}
+      var cw=el("div","row");cw.style.flexWrap="wrap";d.appendChild(cw);
+      function drawCands(){cw.textContent="";cw.style.display=p.cands&&p.cands.length?"flex":"none";
+        (p.cands||[]).forEach(function(st){var cb=el("button","ghost",stLabel(st));cb.type="button";cb.style.padding="5px 9px";cb.style.fontSize="13px";
+          cb.addEventListener("click",function(){pickStation(i,st)});cw.appendChild(cb)})}
+      drawCands();
       d.appendChild(el("p","where",p.pt?"설정됨: "+(p.label||p.pt.lat.toFixed(5)+", "+p.pt.lng.toFixed(5)):"아직 위치가 없습니다"));
       box.appendChild(d);
     });
@@ -130,7 +131,9 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
   }
   function nearStation(lat,lng){var best=null,bd=1e9;STN.forEach(function(s){var dy=(s.lat-lat)*111,dx=(s.lng-lng)*88,d=Math.sqrt(dx*dx+dy*dy);if(d<bd){bd=d;best=s}});
     return best&&bd<=1.5?{st:best,km:bd}:null}
-  (function(){var dl=$("stnList");if(!dl)return;var seen={};STN.forEach(function(s){var v=s.name.replace(/\(.*$/,"").replace(/역$/,"")+"역";if(seen[v])return;seen[v]=1;var o=document.createElement("option");o.value=v;dl.appendChild(o)})})();
+  // 입력 중 추천: 두 글자 이상 쳤을 때만, 최대 5곳
+  function suggest(q){var k=normStn(q);if(k.length<2||/\d/.test(k))return null;
+    var m=STN.filter(function(s){return s.key.indexOf(k)===0}).slice(0,5);return m.length?m:null}
   function find(i){
     var q=(places[i].q||"").trim();if(!q){say(places[i].role+"의 역 이름이나 주소를 입력해 주세요.");return}
     var ms=matchStations(q);
