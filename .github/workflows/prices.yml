@@ -1,0 +1,35 @@
+name: 실거래가 갱신
+on:
+  workflow_dispatch:
+    inputs:
+      geo_max:
+        description: 이번 실행에서 새로 찾을 동 위치 수 (네이버 Geocoding 일일 한도보다 작게)
+        default: "800"
+  schedule:
+    - cron: "23 19 * * 0"   # 매주 월요일 04:23 (한국시간)
+permissions:
+  contents: write
+concurrency: prices
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: molit-${{ github.run_id }}
+          restore-keys: molit-
+      - name: 실거래가 받아 prices.js 만들기
+        env:
+          MOLIT_KEY: ${{ secrets.MOLIT_KEY }}
+          NAVER_ID: ${{ secrets.NAVER_ID }}
+          NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
+          GEO_MAX: ${{ inputs.geo_max }}
+        run: python3 tools/fetch_prices.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: 결과 저장
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prices.js data/geo_cache.json
+          git diff --cached --quiet || (git commit -m "실거래가 자료 갱신" && git push)

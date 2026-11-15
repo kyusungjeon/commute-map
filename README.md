@@ -41,3 +41,8 @@
 - `network.js`는 `tools/build_network.py`가 `stations.js`에서 만든 노선별 역 연결입니다. 역 순서 원자료가 없어 가까운 역끼리 잇는 방식으로 추정하고, 분기·순환 구간은 스크립트 안에서 직접 바로잡았습니다.
 - 소요시간은 역 사이 직선거리와 노선별 속도로 계산한 추정치입니다. 버스·급행은 반영하지 않습니다. 실제 시간은 역을 고른 뒤 '소요시간 계산'(ODsay)으로 확인합니다.
 - 역 자료를 새로 받으면 `python3 tools/build_network.py --write`로 다시 만듭니다.
+
+## 예산 맞춤 (아파트 실거래가)
+- `prices.js`는 GitHub Actions "실거래가 갱신"(`.github/workflows/prices.yml`)이 `tools/fetch_prices.py`로 만듭니다. 매주 월요일 새벽에 돌고, Actions 화면에서 직접 실행할 수도 있습니다.
+- 저장소 Settings → Secrets and variables → Actions 에 `MOLIT_KEY`(공공데이터포털 인증키), `NAVER_ID`, `NAVER_SECRET`(네이버 클라우드 Maps 인증 정보)를 넣어야 합니다. 이 값들은 저장소 파일에 쓰지 않습니다.
+- 개별 거래는 저장하지 않고 법정동별 중위가격만 공개합니다.
