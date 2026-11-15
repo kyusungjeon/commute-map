@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>두 직장 통근 지도</title>
+<style>
+:root{--bg:#f4f5f7;--surface:#fff;--ink:#1b2430;--muted:#5f6b7a;--line:#d8dde5;--accent:#1f6feb;--a:#d9480f;--b:#2b8a3e;--home:#1b2430;--bad:#c92a2a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.5}
+.app{display:grid;grid-template-columns:400px 1fr;height:100%}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:20px;margin:0}
+.lead{margin:0;color:var(--muted);font-size:13.5px}
+.place{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.place b{display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.row{display:flex;gap:6px}
+input[type=text]{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}
+input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 12px;cursor:pointer;white-space:nowrap}
+button.ghost{background:transparent;color:var(--accent)}
+button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+.where{font-size:13px;color:var(--muted);margin:0}
+.msg{font-size:13.5px;margin:0;color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted);font-size:12.5px}
+.big{font-size:22px;font-weight:700}
+.sum{background:var(--bg);border-radius:10px;padding:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#map{height:100%;min-height:320px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+@media (max-width:820px){.app{grid-template-columns:1fr;grid-template-rows:auto 55vh}.side{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="side">
+    <div>
+      <h1>두 직장 통근 지도</h1>
+      <p class="lead">집 후보 한 곳에서 두 사람의 직장까지 대중교통으로 얼마나 걸리는지 한 번에 봅니다.</p>
+    </div>
+    <div id="places"></div>
+    <button id="addDest" class="ghost" type="button">도착지 추가 (최대 4곳)</button>
+    <button id="go" type="button">소요시간 계산</button>
+    <p class="msg" id="msg"></p>
+    <div id="result"></div>
+    <div id="saved"></div>
+    <p class="note">소요시간은 ODsay 대중교통 길찾기 결과 중 가장 빠른 경로 기준이며, 실제 배차와 혼잡에 따라 달라집니다.</p>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function(){
+  var C=window.CONFIG||{};
+  var COLORS=["#1b2430","#d9480f","#2b8a3e","#7048e8","#0b7285"];
+  var places=[{role:"집 후보",q:"",pt:null},{role:"직장 A",q:"",pt:null},{role:"직장 B",q:"",pt:null}];
+  var map=null,markers=[],picking=-1,saved=[];
+  try{saved=JSON.parse(localStorage.getItem("commute-saved")||"[]")}catch(e){}
+  var $=function(id){return document.getElementById(id)};
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
+  function say(t){$("msg").textContent=t||""}
+
+  function renderPlaces(){
+    var box=$("places");box.textContent="";box.style.display="flex";box.style.flexDirection="column";box.style.gap="10px";
+    places.forEach(function(p,i){
+      var d=el("div","place");var b=el("b");var dot=el("span","dot");dot.style.background=COLORS[i];b.appendChild(dot);b.appendChild(document.createTextNode(p.role));d.appendChild(b);
+      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="도로명·지번 주소 (예: 테헤란로 152)";inp.setAttribute("aria-label",p.role+" 주소");
+      inp.addEventListener("input",function(){p.q=inp.value});
+      inp.addEventListener("keydown",function(e){if(e.key==="Enter")find(i)});
+      var fb=el("button","ghost","찾기");fb.type="button";fb.addEventListener("click",function(){find(i)});
+      r.appendChild(inp);r.appendChild(fb);d.appendChild(r);
+      var pb=el("button",picking===i?"on":"ghost",picking===i?"지도를 눌러 위치를 정하세요":"지도에서 직접 찍기");pb.type="button";
+      pb.addEventListener("click",function(){picking=picking===i?-1:i;renderPlaces()});d.appendChild(pb);
+      d.appendChild(el("p","where",p.pt?"설정됨: "+(p.label||p.pt.lat.toFixed(5)+", "+p.pt.lng.toFixed(5)):"아직 위치가 없습니다"));
+      box.appendChild(d);
+    });
+    $("addDest").disabled=places.length>=5;
+  }
+  function setPoint(i,lat,lng,label){places[i].pt={lat:lat,lng:lng};places[i].label=label||"";drawMarkers();renderPlaces()}
+  function drawMarkers(){
+    if(!map)return;markers.forEach(function(m){m.setMap(null)});markers=[];
+    var bounds=null;
+    places.forEach(function(p,i){if(!p.pt)return;var pos=new naver.maps.LatLng(p.pt.lat,p.pt.lng);
+      markers.push(new naver.maps.Marker({position:pos,map:map,title:p.role,icon:{content:'<div style="background:'+COLORS[i]+';color:#fff;padding:4px 8px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;transform:translate(-50%,-50%)">'+p.role+'</div>'}}));
+      if(!bounds)bounds=new naver.maps.LatLngBounds(pos,pos);else bounds.extend(pos)});
+    if(bounds&&markers.length>1)map.fitBounds(bounds,{top:60,right:60,bottom:60,left:60});else if(bounds)map.setCenter(bounds.getCenter());
+  }
+  function find(i){
+    var q=(places[i].q||"").trim();if(!q){say(places[i].role+"의 주소를 입력해 주세요.");return}
+    if(!window.naver||!naver.maps.Service){say("지도가 아직 준비되지 않았습니다. 네이버 지도 키 설정을 확인해 주세요.");return}
+    say("");
+    naver.maps.Service.geocode({query:q},function(status,res){
+      var a=res&&res.v2&&res.v2.addresses&&res.v2.addresses[0];
+      if(status!==naver.maps.Service.Status.OK||!a){say("'"+q+"'를 주소로 찾지 못했습니다. 도로명이나 지번 주소로 입력하거나 지도에서 직접 찍어 주세요.");return}
+      setPoint(i,parseFloat(a.y),parseFloat(a.x),a.roadAddress||a.jibunAddress||q);
+    });
+  }
+
+  // ODsay: 출발지 → 도착지 대중교통 경로. 가장 빠른 경로 하나를 요약해 돌려준다.
+  function route(from,to){
+    var base=C.ODSAY_PROXY||"https://api.odsay.com/v1/api/searchPubTransPathT";
+    var url=base+"?SX="+from.lng+"&SY="+from.lat+"&EX="+to.lng+"&EY="+to.lat+"&OPT=0"+(C.ODSAY_PROXY?"":"&apiKey="+encodeURIComponent(C.ODSAY_KEY||""));
+    return fetch(url).then(function(r){return r.json()}).then(function(d){
+      if(d.error){var e=Array.isArray(d.error)?d.error[0]:d.error;throw new Error((e&&(e.message||e.msg))||"길찾기 오류")}
+      var paths=d.result&&d.result.path;if(!paths||!paths.length)throw new Error("경로 없음");
+      var best=paths.reduce(function(a,b){return a.info.totalTime<=b.info.totalTime?a:b});
+      var inf=best.info;
+      return {min:inf.totalTime,transfer:Math.max(0,(inf.busTransitCount||0)+(inf.subwayTransitCount||0)-1),walk:inf.totalWalk||0,fare:inf.payment||0,
+        kind:best.pathType===1?"지하철":best.pathType===2?"버스":"지하철+버스"};
+    });
+  }
+  function calc(){
+    var home=places[0];if(!home.pt){say("집 후보 위치를 먼저 정해 주세요.");return}
+    var dests=places.slice(1).filter(function(p){return p.pt});
+    if(!dests.length){say("도착지를 한 곳 이상 정해 주세요.");return}
+    if(!C.ODSAY_PROXY&&!C.ODSAY_KEY){say("config.js에 ODsay 키가 없습니다. README의 설정 순서를 확인해 주세요.");return}
+    say("");$("go").disabled=true;$("result").textContent="계산 중입니다…";
+    // 한도 보호를 위해 하나씩 차례로 호출한다
+    var out=[];
+    dests.reduce(function(chain,p){return chain.then(function(){return route(home.pt,p.pt).then(function(r){out.push({p:p,r:r})},function(e){out.push({p:p,err:e.message})})})},Promise.resolve())
+    .then(function(){$("go").disabled=false;showResult(home,out)});
+  }
+  function showResult(home,out){
+    var box=$("result");box.textContent="";
+    var ok=out.filter(function(o){return o.r});
+    if(ok.length){var mx=Math.max.apply(null,ok.map(function(o){return o.r.min})),sm=ok.reduce(function(a,o){return a+o.r.min},0);
+      var s=el("div","sum");var l=el("div");l.appendChild(el("div","where","가장 오래 걸리는 쪽"));l.appendChild(el("div","big",mx+"분"));
+      var r2=el("div");r2.appendChild(el("div","where","편도 합계"));r2.appendChild(el("div","big",sm+"분"));s.appendChild(l);s.appendChild(r2);box.appendChild(s)}
+    var t=el("table");t.innerHTML="<thead><tr><th>도착지</th><th>소요시간</th><th>환승</th><th>도보</th><th>요금</th></tr></thead>";var tb=el("tbody");
+    out.forEach(function(o){var tr=el("tr");tr.appendChild(el("td","",o.p.role));
+      if(o.r){[o.r.min+"분 ("+o.r.kind+")",o.r.transfer+"회",o.r.walk+"m",o.r.fare.toLocaleString("ko-KR")+"원"].forEach(function(x){tr.appendChild(el("td","",x))})}
+      else{var td=el("td","","조회 실패: "+o.err);td.colSpan=4;td.style.color="var(--bad)";tr.appendChild(td)}
+      tb.appendChild(tr)});
+    t.appendChild(tb);box.appendChild(t);
+    if(ok.length){var sv=el("button","ghost","이 집 후보를 비교 목록에 저장");sv.type="button";sv.style.marginTop="10px";
+      sv.addEventListener("click",function(){saved.push({name:home.label||"집 후보 "+(saved.length+1),times:out.map(function(o){return {role:o.p.role,min:o.r?o.r.min:null}})});
+        try{localStorage.setItem("commute-saved",JSON.stringify(saved))}catch(e){}renderSaved()});box.appendChild(sv)}
+  }
+  function renderSaved(){
+    var box=$("saved");box.textContent="";if(!saved.length)return;
+    box.appendChild(el("b","","저장한 집 후보 비교"));
+    var t=el("table"),tb=el("tbody");
+    saved.forEach(function(s,i){var tr=el("tr");tr.appendChild(el("td","",s.name));
+      tr.appendChild(el("td","",s.times.map(function(x){return x.role+" "+(x.min==null?"-":x.min+"분")}).join(" · ")));
+      var td=el("td"),b=el("button","ghost","삭제");b.type="button";b.style.padding="3px 8px";b.addEventListener("click",function(){saved.splice(i,1);try{localStorage.setItem("commute-saved",JSON.stringify(saved))}catch(e){}renderSaved()});td.appendChild(b);tr.appendChild(td);tb.appendChild(tr)});
+    t.appendChild(tb);box.appendChild(t);
+  }
+
+  $("addDest").addEventListener("click",function(){if(places.length<5){places.push({role:"도착지 "+String.fromCharCode(65+places.length-1),q:"",pt:null});renderPlaces()}});
+  $("go").addEventListener("click",calc);
+  renderPlaces();renderSaved();
+
+  // 네이버 지도 SDK 로드 (키는 config.js에서)
+  if(!C.NAVER_KEY_ID){say("config.js에 네이버 지도 키가 없습니다. README의 설정 순서를 확인해 주세요.");return}
+  window.navermap_authFailure=function(){say("네이버 지도 인증에 실패했습니다. 키와 등록한 웹 서비스 URL을 확인해 주세요.")};
+  var s=document.createElement("script");
+  s.src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId="+encodeURIComponent(C.NAVER_KEY_ID)+"&submodules=geocoder";
+  s.onload=function(){
+    map=new naver.maps.Map("map",{center:new naver.maps.LatLng(37.5665,126.9780),zoom:11});
+    naver.maps.Event.addListener(map,"click",function(e){if(picking<0)return;var i=picking;picking=-1;setPoint(i,e.coord.lat(),e.coord.lng(),"지도에서 찍은 위치")});
+  };
+  s.onerror=function(){say("네이버 지도를 불러오지 못했습니다. 네트워크와 키 설정을 확인해 주세요.")};
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
