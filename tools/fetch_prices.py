@@ -6,7 +6,8 @@
 - 필요한 환경변수: MOLIT_KEY, NAVER_ID, NAVER_SECRET  (GitHub Secrets 에만 넣는다. 저장소에 쓰지 않는다)
 - 개별 거래는 저장소에 남기지 않고 동 단위 통계만 내보낸다.
 """
-import os,sys,json,time,datetime,statistics,urllib.request,urllib.parse,urllib.error
+import os,sys,json,time,datetime,statistics,threading,urllib.request,urllib.parse,urllib.error
+from concurrent.futures import ThreadPoolExecutor
 import xml.etree.ElementTree as ET
 
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,7 +23,10 @@ SGG={ # 법정동코드 앞 5자리: (시도, 시군구)
 }
 # 행정구역 개편으로 코드가 바뀌었을 수 있는 곳. 최근 달에 거래가 있으면 쓰고 없으면 건너뛴다.
 PROBE={'41192':('경기도','부천시 원미구'),'41194':('경기도','부천시 소사구'),'41196':('경기도','부천시 오정구'),
-       '41591':('경기도','화성시'),'41593':('경기도','화성시'),'41595':('경기도','화성시'),'41597':('경기도','화성시')}
+       '41591':('경기도','화성시 만세구'),'41593':('경기도','화성시 효행구'),'41595':('경기도','화성시 병점구'),'41597':('경기도','화성시 동탄구')}
+# 인천은 2026년 7월 개편(제물포구·영종구·검단구 신설)으로 코드가 바뀌었는데 새 코드를 확인하지 못해 후보를 훑는다.
+for _c in list(range(28100,28300,5))+[28112,28114,28116,28118,28142,28144,28262,28264,28266,28268]:
+    if str(_c) not in SGG:PROBE[str(_c)]=('인천광역시','')
 API={'sale':'https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade',
      'rent':'https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent'}
 
@@ -74,32 +78,52 @@ def http(url,headers=None,tries=3):
 def fetch(kind,code,ym,key):
     rows,page=[],1
     while True:
-        xml=http(f"{API[kind]}?serviceKey={key}&LAWD_CD={code}&DEAL_YMD={ym}&pageNo={page}&numOfRows=1000")
-        r,total=parse(kind,xml);rows+=r
+        for k in range(6):
+            xml=http(f"{API[kind]}?serviceKey={key}&LAWD_CD={code}&DEAL_YMD={ym}&pageNo={page}&numOfRows=1000")
+            try:r,total=parse(kind,xml);break
+            except ApiStop as e:
+                if 'PER_SECOND' not in str(e) or k==5:raise
+                time.sleep(2+k)                      # 초당 한도에 걸리면 잠깐 쉬고 다시
+        rows+=r
         if page*1000>=total:break
         page+=1
     return rows
 
 def collect(key,today=None):
     os.makedirs(CACHE,exist_ok=True)
-    ms=months(MONTHS,today);fresh=set(ms[:2]);stopped=None;data={};codes=dict(SGG)
-    try:
-        for c,nm in PROBE.items():
-            if fetch('sale',c,ms[1],key):codes[c]=nm;print('개편 코드 사용:',c,nm)
-    except ApiStop as e:stopped=str(e)
+    ms=months(MONTHS,today);fresh=set(ms[:2]);data={};codes=dict(SGG);stop=[]
+    def probe(c):
+        if stop:return c,False
+        try:return c,bool(fetch('sale',c,ms[1],key))
+        except ApiStop as e:stop.append(str(e));return c,False
+    with ThreadPoolExecutor(4) as ex:
+        for c,ok in ex.map(probe,list(PROBE)):
+            if ok:codes[c]=PROBE[c];print('개편 코드 사용:',c,PROBE[c],flush=True)
+    todo=[]
     for kind in('sale','rent'):
         for ym in ms:                                   # 최근 달부터
             for code in codes:
                 f=os.path.join(CACHE,f'{kind}_{code}_{ym}.json')
-                if os.path.exists(f) and (ym not in fresh or stopped):
-                    data[(kind,code,ym)]=json.load(open(f));continue
-                if stopped:continue
-                try:
-                    rows=fetch(kind,code,ym,key);json.dump(rows,open(f,'w'),ensure_ascii=False);data[(kind,code,ym)]=rows
-                except ApiStop as e:
-                    stopped=str(e);print('!! 호출 중단:',stopped)
-                    if os.path.exists(f):data[(kind,code,ym)]=json.load(open(f))
-    return data,codes,ms,stopped
+                if os.path.exists(f) and ym not in fresh:data[(kind,code,ym)]=json.load(open(f))
+                else:todo.append((kind,code,ym,f))
+    done=[0];lock=threading.Lock()
+    def work(t):
+        kind,code,ym,f=t
+        if not stop:
+            try:
+                rows=fetch(kind,code,ym,key);json.dump(rows,open(f,'w'),ensure_ascii=False)
+                with lock:
+                    done[0]+=1
+                    if done[0]%100==0:print(f'  실거래가 {done[0]}/{len(todo)} 받는 중',flush=True)
+                return (kind,code,ym),rows
+            except ApiStop as e:
+                if not stop:print('!! 호출 중단:',e,flush=True)
+                stop.append(str(e))
+        return ((kind,code,ym),json.load(open(f))) if os.path.exists(f) else None
+    with ThreadPoolExecutor(4) as ex:
+        for r in ex.map(work,todo):
+            if r:data[r[0]]=r[1]
+    return data,codes,ms,(stop[0] if stop else None)
 
 def band(a):return sum(a>b for b in BANDS)
 
@@ -130,9 +154,10 @@ def locate(agg,codes,nid,sec):
         if k in geo or not d['cx'] or stopped:continue
         if used>=GEO_MAX:break
         (apt,jibun),_=max(d['cx'].items(),key=lambda kv:kv[1]);sido,sgg=codes[code]
+        if used and used%200==0:print(f'  동 위치 {used}곳 찾는 중',flush=True)
         try:
-            pt=geocode(f'{sido} {sgg} {dong} {jibun}',nid,sec);used+=1
-            geo[k]=pt or geocode(f'{sido} {sgg} {dong}',nid,sec) or []
+            pt=geocode(' '.join(x for x in(sido,sgg,dong,jibun) if x),nid,sec);used+=1
+            geo[k]=pt or geocode(' '.join(x for x in(sido,sgg,dong) if x),nid,sec) or []
             if not pt:used+=1
             time.sleep(0.05)
         except ApiStop as e:stopped=str(e);print('!! 주소 찾기 중단:',stopped)
@@ -149,7 +174,8 @@ def build(agg,codes,geo,ms,complete):
         if not pt:continue
         s=[med(x) for x in d['s']];j=[med(x) for x in d['j']]
         if not any(s+j):continue
-        lines.append(f"{codes[code][1]} {dong}|{pt[0]},{pt[1]}|{','.join(s)}|{','.join(j)}")
+        sido,sgg=codes[code];label=('인천 '+sgg).strip() if sido.startswith('인천') else sgg
+        lines.append(f"{label} {dong}|{pt[0]},{pt[1]}|{','.join(s)}|{','.join(j)}")
     period=f"{ms[-1][:4]}년 {int(ms[-1][4:])}월~{ms[0][:4]}년 {int(ms[0][4:])}월"
     js=("// 수도권 아파트 실거래가 동별 중위가격(만원). tools/fetch_prices.py 가 만든다. 출처: 국토교통부 실거래가 공개자료\n"
         "// 형식: 시군구 동|위도,경도|매매(≤40,40~60,60~85,85초과)|전세(같은 순서). 거래 "+str(MIN_N)+"건 미만은 빈칸\n"

@@ -26,7 +26,7 @@ jobs:
           NAVER_ID: ${{ secrets.NAVER_ID }}
           NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
           GEO_MAX: ${{ inputs.geo_max }}
-        run: python3 tools/fetch_prices.py | tee -a "$GITHUB_STEP_SUMMARY"
+        run: python3 -u tools/fetch_prices.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: 결과 저장
         run: |
           git config user.name "github-actions[bot]"
