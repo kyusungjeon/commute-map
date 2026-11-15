@@ -54,11 +54,14 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     <div id="result"></div>
     <div id="saved"></div>
     <p class="note">소요시간은 ODsay 대중교통 길찾기 결과 중 가장 빠른 경로 기준이며, 실제 배차와 혼잡에 따라 달라집니다.</p>
+    <p class="note">지도 © NAVER · 대중교통 경로 powered by <a href="https://www.odsay.com" target="_blank" rel="noopener">www.ODsay.com</a> · 역 위치 출처: 서울 열린데이터광장</p>
+    <datalist id="stnList"></datalist>
   </div>
   <div id="map"></div>
 </div>
 
 <script src="config.js"></script>
+<script src="stations.js"></script>
 <script>
 (function(){
   var C=window.CONFIG||{};
@@ -74,19 +77,36 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     var box=$("places");box.textContent="";box.style.display="flex";box.style.flexDirection="column";box.style.gap="10px";
     places.forEach(function(p,i){
       var d=el("div","place");var b=el("b");var dot=el("span","dot");dot.style.background=COLORS[i];b.appendChild(dot);b.appendChild(document.createTextNode(p.role));d.appendChild(b);
-      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="도로명·지번 주소 (예: 테헤란로 152)";inp.setAttribute("aria-label",p.role+" 주소");
-      inp.addEventListener("input",function(){p.q=inp.value});
+      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="역 이름 또는 주소 (예: 강남역, 테헤란로 152)";inp.setAttribute("aria-label",p.role+" 역 이름 또는 주소");inp.setAttribute("list","stnList");
+      inp.addEventListener("input",function(){p.q=inp.value;p.cands=null});
       inp.addEventListener("keydown",function(e){if(e.key==="Enter")find(i)});
       var fb=el("button","ghost","찾기");fb.type="button";fb.addEventListener("click",function(){find(i)});
       r.appendChild(inp);r.appendChild(fb);d.appendChild(r);
       var pb=el("button",picking===i?"on":"ghost",picking===i?"지도를 눌러 위치를 정하세요":"지도에서 직접 찍기");pb.type="button";
       pb.addEventListener("click",function(){picking=picking===i?-1:i;renderPlaces()});d.appendChild(pb);
+      if(p.cands&&p.cands.length){var cw=el("div","row");cw.style.flexWrap="wrap";
+        p.cands.forEach(function(st){var cb=el("button","ghost",stLabel(st));cb.type="button";cb.style.padding="5px 9px";cb.style.fontSize="13px";
+          cb.addEventListener("click",function(){pickStation(i,st)});cw.appendChild(cb)});d.appendChild(cw)}
       d.appendChild(el("p","where",p.pt?"설정됨: "+(p.label||p.pt.lat.toFixed(5)+", "+p.pt.lng.toFixed(5)):"아직 위치가 없습니다"));
       box.appendChild(d);
     });
     $("addDest").disabled=places.length>=5;
   }
   function setPoint(i,lat,lng,label){places[i].pt={lat:lat,lng:lng};places[i].label=label||"";drawMarkers();renderPlaces()}
+  // 지도에서 찍은 점: 먼저 가까운 역으로 이름을 붙이고, 네이버 Reverse Geocoding 이 켜져 있으면 주소로 바꾼다.
+  function pickOnMap(i,lat,lng){
+    var n=nearStation(lat,lng),near=n?stLabel(n.st).replace(/ \(.*$/,"")+" 근처":"";
+    setPoint(i,lat,lng,near?near+" (지도에서 찍음)":"지도에서 찍은 위치 "+lat.toFixed(4)+", "+lng.toFixed(4));
+    try{
+      if(!naver.maps.Service||!naver.maps.Service.reverseGeocode)return;
+      naver.maps.Service.reverseGeocode({coords:new naver.maps.LatLng(lat,lng),orders:"roadaddr,addr"},function(status,res){
+        var p=places[i];if(!p||!p.pt||p.pt.lat!==lat||p.pt.lng!==lng)return;
+        if(status!==naver.maps.Service.Status.OK)return;
+        var a=res&&res.v2&&res.v2.address,addr=a&&(a.roadAddress||a.jibunAddress);
+        if(addr){p.label=addr+(near?" · "+near:"");renderPlaces()}
+      });
+    }catch(e){}
+  }
   function drawMarkers(){
     if(!map)return;markers.forEach(function(m){m.setMap(null)});markers=[];
     var bounds=null;
@@ -95,13 +115,32 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
       if(!bounds)bounds=new naver.maps.LatLngBounds(pos,pos);else bounds.extend(pos)});
     if(bounds&&markers.length>1)map.fitBounds(bounds,{top:60,right:60,bottom:60,left:60});else if(bounds)map.setCenter(bounds.getCenter());
   }
+  // 내장 역 목록: 역명|위도,경도|노선
+  var STN=String(window.STATIONS_RAW||"").split("\n").filter(Boolean).map(function(l){var a=l.split("|"),c=(a[1]||"").split(",");
+    return {name:a[0],lat:parseFloat(c[0]),lng:parseFloat(c[1]),lines:(a[2]||"").split(","),key:normStn(a[0].replace(/\(.*$/,""))}}).filter(function(x){return isFinite(x.lat)&&isFinite(x.lng)});
+  function normStn(t){t=String(t||"").replace(/\s+/g,"");return t.length>1?t.replace(/역$/,""):t}
+  function stLabel(st){return st.name.replace(/\(.*$/,"").replace(/역$/,"")+"역 ("+st.lines.join("·")+")"}
+  function pickStation(i,st){places[i].cands=null;places[i].q=st.name;setPoint(i,st.lat,st.lng,stLabel(st))}
+  function matchStations(q){
+    var k=normStn(q);if(!k)return [];
+    var full=String(q).replace(/\s+/g,"");
+    var ex=STN.filter(function(s){return s.key===k||s.name===full});if(ex.length)return ex;
+    if(/\d/.test(k)||k.length<2)return [];
+    return STN.filter(function(s){return s.key.indexOf(k)===0}).slice(0,6);
+  }
+  function nearStation(lat,lng){var best=null,bd=1e9;STN.forEach(function(s){var dy=(s.lat-lat)*111,dx=(s.lng-lng)*88,d=Math.sqrt(dx*dx+dy*dy);if(d<bd){bd=d;best=s}});
+    return best&&bd<=1.5?{st:best,km:bd}:null}
+  (function(){var dl=$("stnList");if(!dl)return;var seen={};STN.forEach(function(s){var v=s.name.replace(/\(.*$/,"").replace(/역$/,"")+"역";if(seen[v])return;seen[v]=1;var o=document.createElement("option");o.value=v;dl.appendChild(o)})})();
   function find(i){
-    var q=(places[i].q||"").trim();if(!q){say(places[i].role+"의 주소를 입력해 주세요.");return}
+    var q=(places[i].q||"").trim();if(!q){say(places[i].role+"의 역 이름이나 주소를 입력해 주세요.");return}
+    var ms=matchStations(q);
+    if(ms.length===1){say("");pickStation(i,ms[0]);return}
+    if(ms.length>1){say("같은 이름으로 찾은 역이 여러 곳입니다. 아래에서 골라 주세요.");places[i].cands=ms;renderPlaces();return}
     if(!window.naver||!naver.maps.Service){say("지도가 아직 준비되지 않았습니다. 네이버 지도 키 설정을 확인해 주세요.");return}
     say("");
     naver.maps.Service.geocode({query:q},function(status,res){
       var a=res&&res.v2&&res.v2.addresses&&res.v2.addresses[0];
-      if(status!==naver.maps.Service.Status.OK||!a){say("'"+q+"'를 주소로 찾지 못했습니다. 도로명이나 지번 주소로 입력하거나 지도에서 직접 찍어 주세요.");return}
+      if(status!==naver.maps.Service.Status.OK||!a){say("'"+q+"'를 역 이름이나 주소로 찾지 못했습니다. 역 이름, 도로명·지번 주소로 입력하거나 지도에서 직접 찍어 주세요.");return}
       setPoint(i,parseFloat(a.y),parseFloat(a.x),a.roadAddress||a.jibunAddress||q);
     });
   }
@@ -122,13 +161,24 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
   function route(from,to){
     var base=C.ODSAY_PROXY||"https://api.odsay.com/v1/api/searchPubTransPathT";
     var url=base+"?SX="+from.lng+"&SY="+from.lat+"&EX="+to.lng+"&EY="+to.lat+"&OPT=0"+(C.ODSAY_PROXY?"":"&apiKey="+encodeURIComponent(C.ODSAY_KEY||""));
-    return fetch(url).then(function(r){return r.json()}).then(function(d){
-      if(d.error){var e=Array.isArray(d.error)?d.error[0]:d.error;throw new Error((e&&(e.message||e.msg))||"길찾기 오류")}
-      var paths=d.result&&d.result.path;if(!paths||!paths.length)throw new Error("경로 없음");
+    return fetch(url).then(function(r){var st=r.status;return r.json().then(function(d){return {st:st,d:d}},function(){return {st:st,d:null}})},function(){throw new Error("길찾기 서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 잠시 뒤 다시 시도해 주세요.")}).then(function(x){
+      var d=x.d;
+      if(!d||d.error||x.st>=400){var e=d&&d.error;if(Array.isArray(e))e=e[0];throw odsayError(x.st,e)}
+      var paths=d.result&&d.result.path;if(!paths||!paths.length)throw new Error("이 구간은 대중교통 경로를 찾지 못했습니다.");
       return paths.map(function(p){var inf=p.info,boards=(inf.busTransitCount||0)+(inf.subwayTransitCount||0);
         return {move:inf.totalTime,boards:boards,transfer:Math.max(0,boards-1),walk:inf.totalWalk||0,fare:inf.payment||0,legs:legsOf(p)}})
         .sort(function(a,b){return (a.move+a.boards*WAIT)-(b.move+b.boards*WAIT)}).slice(0,3);
     });
+  }
+  // ODsay 오류를 사람이 읽을 수 있는 안내로 바꾼다. 한도 초과는 e.limit=true 로 표시해 남은 호출을 멈춘다.
+  function odsayError(status,e){
+    var code=String((e&&e.code)!=null?e.code:""),raw=String((e&&(e.message||e.msg))||""),t=(code+" "+raw).toLowerCase(),err;
+    if(status===429||/limit|exceed|quota|초과|한도/.test(t)){err=new Error("오늘 무료 조회 한도를 모두 썼습니다. 내일 다시 이용해 주세요.");err.limit=true;return err}
+    if(status===401||status===403||/auth|key|인증/.test(t))return new Error("길찾기 키 인증에 실패했습니다. 사이트 관리자에게 알려 주세요.");
+    if(code==="-98"||code==="-99"||/700m/.test(t))return new Error("두 지점이 너무 가까워(약 700m 이내) 대중교통 경로가 없습니다. 걸어갈 수 있는 거리입니다.");
+    if(code==="3"||code==="4"||code==="5")return new Error("출발지나 도착지 근처에 정류장이 없습니다. 위치를 조금 옮겨 다시 시도해 주세요.");
+    if(code==="6")return new Error("대중교통 길찾기를 지원하지 않는 지역입니다.");
+    return new Error("길찾기 서비스에 일시적인 문제가 있습니다. 잠시 뒤 다시 시도해 주세요."+(raw?" ("+raw+")":""));
   }
   function total(o){return Math.round(o.move+o.boards*WAIT)}
   var lastHome=null,lastOut=[],lines=[];
@@ -140,7 +190,10 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     say("");$("go").disabled=true;$("result").textContent="계산 중입니다…";
     var out=[];
     // 한도 보호를 위해 하나씩 차례로 호출한다
-    dests.reduce(function(chain,d){return chain.then(function(){return route(home.pt,d.p.pt).then(function(opts){out.push({p:d.p,i:d.i,opts:opts,sel:0})},function(e){out.push({p:d.p,i:d.i,err:e.message})})})},Promise.resolve())
+    var stopped=false;
+    dests.reduce(function(chain,d){return chain.then(function(){
+      if(stopped){out.push({p:d.p,i:d.i,err:"오늘 조회 한도가 끝나 계산하지 못했습니다."});return}
+      return route(home.pt,d.p.pt).then(function(opts){out.push({p:d.p,i:d.i,opts:opts,sel:0})},function(e){if(e.limit)stopped=true;out.push({p:d.p,i:d.i,err:e.message})})})},Promise.resolve())
     .then(function(){$("go").disabled=false;lastHome=home;lastOut=out;showResult();$("result").scrollIntoView({block:"nearest"})});
   }
   function drawRoutes(){
@@ -160,7 +213,7 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
       var r2=el("div");r2.appendChild(el("div","where","편도 합계"));r2.appendChild(el("div","big",sm+"분"));s.appendChild(l);s.appendChild(r2);box.appendChild(s)}
     out.forEach(function(o){
       var card=el("div","dest");var h=el("b");var dot=el("span","dot");dot.style.background=COLORS[o.i];h.appendChild(dot);h.appendChild(document.createTextNode(o.p.role));card.appendChild(h);
-      if(!o.opts){var er=el("p","msg","조회 실패: "+o.err);card.appendChild(er);box.appendChild(card);return}
+      if(!o.opts){var er=el("p","msg",o.err);card.appendChild(er);box.appendChild(card);return}
       var r=o.opts[o.sel];
       card.appendChild(el("div","big","약 "+total(r)+"분"));
       card.appendChild(el("p","where","이동 "+r.move+"분 + 대기 추정 "+Math.round(r.boards*WAIT)+"분 · 환승 "+r.transfer+"회 · 도보 "+r.walk+"m · "+r.fare.toLocaleString("ko-KR")+"원"));
@@ -179,7 +232,7 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
       wr.appendChild(el("p","note","ODsay의 소요시간에는 버스·지하철을 기다리는 시간이 들어 있지 않습니다. 그래서 탈 때마다 이 값을 더해 보여 줍니다. 출근 시간대 실제 시간과 차이가 나면 값을 조정하세요."));
       box.appendChild(wr);
       var sv=el("button","ghost","이 집 후보를 비교 목록에 저장");sv.type="button";
-      sv.addEventListener("click",function(){saved.push({name:home.label&&home.label!=="지도에서 찍은 위치"?home.label:"집 후보 "+(saved.length+1),times:out.map(function(o){return {role:o.p.role,min:o.opts?total(o.opts[o.sel]):null}})});
+      sv.addEventListener("click",function(){saved.push({name:home.label&&home.label.indexOf("지도에서 찍은 위치")!==0?home.label:"집 후보 "+(saved.length+1),times:out.map(function(o){return {role:o.p.role,min:o.opts?total(o.opts[o.sel]):null}})});
         try{localStorage.setItem("commute-saved",JSON.stringify(saved))}catch(e){}renderSaved()});box.appendChild(sv)}
     drawRoutes();
   }
@@ -204,7 +257,7 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
   s.src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId="+encodeURIComponent(C.NAVER_KEY_ID)+"&submodules=geocoder";
   s.onload=function(){
     map=new naver.maps.Map("map",{center:new naver.maps.LatLng(37.5665,126.9780),zoom:11});
-    naver.maps.Event.addListener(map,"click",function(e){if(picking<0)return;var i=picking;picking=-1;setPoint(i,e.coord.lat(),e.coord.lng(),"지도에서 찍은 위치")});
+    naver.maps.Event.addListener(map,"click",function(e){if(picking<0)return;var i=picking;picking=-1;pickOnMap(i,e.coord.lat(),e.coord.lng())});
   };
   s.onerror=function(){say("네이버 지도를 불러오지 못했습니다. 네트워크와 키 설정을 확인해 주세요.")};
   document.head.appendChild(s);
