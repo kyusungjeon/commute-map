@@ -27,6 +27,7 @@ PROBE={'41192':('경기도','부천시 원미구'),'41194':('경기도','부천�
 # 인천은 2026년 7월 개편(제물포구·영종구·검단구 신설)으로 코드가 바뀌었는데 새 코드를 확인하지 못해 후보를 훑는다.
 for _c in list(range(28100,28300,5))+[28112,28114,28116,28118,28142,28144,28262,28264,28266,28268]:
     if str(_c) not in SGG:PROBE[str(_c)]=('인천광역시','')
+PROBE.update({'28125':('인천광역시','제물포구'),'28155':('인천광역시','영종구'),'28275':('인천광역시','서해구'),'28290':('인천광역시','검단구')})  # 2026-11 실행에서 확인된 코드
 API={'sale':'https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade',
      'rent':'https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent'}
 
