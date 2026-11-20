@@ -3,40 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>두 직장 통근 지도</title>
+<title>두 직장 통근 지도 · 통근시간과 예산으로 아파트 단지 찾기</title>
+<meta name="description" content="직장, 어린이집, 부모님 댁처럼 자주 가는 곳과 감당할 수 있는 통근시간·전세·매매 예산을 넣으면 조건에 맞는 수도권 아파트 단지를 찾아 줍니다.">
 <style>
-:root{--bg:#f4f5f7;--surface:#fff;--ink:#1b2430;--muted:#5f6b7a;--line:#d8dde5;--accent:#1f6feb;--a:#d9480f;--b:#2b8a3e;--home:#1b2430;--bad:#c92a2a}
+:root{--bg:#f4f5f7;--surface:#fff;--ink:#1b2430;--muted:#5f6b7a;--line:#d8dde5;--accent:#1f6feb;--bad:#c92a2a;--ok:#087f5b}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.5}
-.app{display:grid;grid-template-columns:400px 1fr;height:100%}
+body{font-family:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.5}
+.app{display:grid;grid-template-columns:420px 1fr;height:100%}
 .side{background:var(--surface);border-right:1px solid var(--line);padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
 h1{font-size:20px;margin:0}
-.lead{margin:0;color:var(--muted);font-size:13.5px}
-.place{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
-.place b{display:flex;align-items:center;gap:8px}
+h2{font-size:16px;margin:0;display:flex;align-items:center;gap:8px}
+h2 .n{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;align-items:center;justify-content:center;flex:none}
+.lead{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.sec{display:flex;flex-direction:column;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.card .top{display:flex;align-items:center;gap:8px}
 .dot{width:12px;height:12px;border-radius:50%;flex:none}
-.row{display:flex;gap:6px}
-input[type=text]{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}
+.row{display:flex;gap:6px;align-items:center}
+.wrap{flex-wrap:wrap}
+input[type=text]{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;background:#fff}
+input.name{font-weight:700;border-color:transparent;padding:4px 6px}
+input.name:hover{border-color:var(--line)}
+input.num{flex:0 0 72px;text-align:right}
 input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
 button{font:inherit;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 12px;cursor:pointer;white-space:nowrap}
 button.ghost{background:transparent;color:var(--accent)}
 button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+button.sm{padding:5px 9px;font-size:13px}
+button.x{background:transparent;border-color:transparent;color:var(--muted);padding:2px 8px;font-size:18px;line-height:1}
 button:disabled{opacity:.4;cursor:not-allowed}
 .where{font-size:13px;color:var(--muted);margin:0}
 .msg{font-size:13.5px;margin:0;color:var(--bad)}
-table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
-th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right}
+.msg.ok{color:var(--ok)}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.big{font-size:22px;font-weight:700}
+.apt{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:normal}
+.apt:hover,.apt:focus-visible{border-color:var(--accent);outline:none}
+.apt.sel{border:2px solid var(--accent);padding:9px 11px}
+.apt .nm{font-weight:700;font-size:15px}
+.apt .sub{font-size:12.5px;color:var(--muted)}
+.apt .pr{float:right;font-weight:700;font-size:14.5px;margin-left:8px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tag{font-size:12.5px;border-radius:12px;padding:1px 8px;color:#fff;font-variant-numeric:tabular-nums}
+.legs{margin:0;padding-left:20px;font-size:13.5px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
 th:first-child,td:first-child{text-align:left}
 th{font-weight:500;color:var(--muted);font-size:12.5px}
-.big{font-size:22px;font-weight:700}
-.sum{background:var(--bg);border-radius:10px;padding:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.dest{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.dest b{display:flex;align-items:center;gap:8px}
-.legs{margin:0;padding-left:20px;font-size:13.5px}
-#result{display:flex;flex-direction:column;gap:10px}
 #map{height:100%;min-height:320px}
-.note{font-size:12.5px;color:var(--muted);margin:0}
 @media (max-width:820px){.app{grid-template-columns:1fr;grid-template-rows:auto 55vh}.side{border-right:0;border-bottom:1px solid var(--line)}}
 </style>
 </head>
@@ -45,19 +60,26 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
   <div class="side">
     <div>
       <h1>두 직장 통근 지도</h1>
-      <p class="lead">집 후보 한 곳에서 두 사람의 직장까지 대중교통으로 얼마나 걸리는지 한 번에 봅니다.</p>
+      <p class="lead">직장, 어린이집, 부모님 댁처럼 자주 가는 곳과 감당할 수 있는 통근시간·예산을 넣으면, 모든 조건을 채우는 수도권 아파트 단지를 찾아 줍니다.</p>
     </div>
-    <div id="places"></div>
-    <button id="addDest" class="ghost" type="button">도착지 추가 (최대 4곳)</button>
-    <button id="go" type="button">소요시간 계산</button>
-    <p class="msg" id="msg"></p>
-    <div id="result"></div>
-    <div id="finder"></div>
-    <div id="saved"></div>
-    <div id="share"></div>
-    <p class="note">소요시간은 ODsay 대중교통 길찾기 결과 중 가장 빠른 경로 기준이며, 실제 배차와 혼잡에 따라 달라집니다.</p>
+    <div class="sec">
+      <h2><span class="n">1</span>자주 가는 곳과 최대 시간</h2>
+      <div id="dests" class="sec"></div>
+      <div class="row wrap" id="adds"></div>
+    </div>
+    <div class="sec">
+      <h2><span class="n">2</span>예산 (아파트 실거래가 기준)</h2>
+      <div id="budget" class="sec"></div>
+    </div>
+    <button id="go" type="button">조건에 맞는 단지 찾기</button>
+    <p class="msg" id="msg" role="status"></p>
+    <div id="detail" class="sec"></div>
+    <div id="results" class="sec"></div>
+    <div id="saved" class="sec"></div>
+    <div id="share" class="sec"></div>
     <p class="note" id="dataNote"></p>
-    <p class="note">지도 © NAVER · 대중교통 경로 powered by <a href="https://www.odsay.com" target="_blank" rel="noopener">www.ODsay.com</a> · 역 위치 출처: 서울 열린데이터광장</p>
+    <p class="note">통근시간은 수도권 전철 노선망과 도보로 계산한 추정치입니다(탑승마다 대기시간 포함, 버스·급행 미반영). 단지를 누르면 ODsay 대중교통 길찾기로 실제 경로를 확인할 수 있습니다.</p>
+    <p class="note">지도 © NAVER · 대중교통 경로 powered by <a href="https://www.odsay.com" target="_blank" rel="noopener">www.ODsay.com</a> · 역 위치: 서울 열린데이터광장 · 시세: 국토교통부 실거래가 공개자료</p>
   </div>
   <div id="map"></div>
 </div>
@@ -65,138 +87,64 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
 <script src="config.js"></script>
 <script src="stations.js"></script>
 <script src="network.js"></script>
-<script src="prices.js"></script>
+<script src="apts.js"></script>
 <script>
 (function(){
   var C=window.CONFIG||{};
-  var COLORS=["#1b2430","#d9480f","#2b8a3e","#7048e8","#0b7285"];
-  var places=[{role:"집 후보",q:"",pt:null},{role:"직장 A",q:"",pt:null},{role:"직장 B",q:"",pt:null}];
-  var map=null,markers=[],picking=-1,saved=[];
-  try{saved=JSON.parse(localStorage.getItem("commute-saved")||"[]")}catch(e){}
   var $=function(id){return document.getElementById(id)};
   function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
-  function say(t){$("msg").textContent=t||""}
+  function say(t,ok){var m=$("msg");m.textContent=t||"";m.className="msg"+(ok?" ok":"")}
+  var COLORS=["#d9480f","#2b8a3e","#7048e8","#0b7285","#c2255c"];
+  var PRESETS=[["직장",45],["어린이집·학교",20],["부모님 댁",40],["기타",30]];
+  var MAXD=5;
+  var dests=[{name:"직장 1",q:"",pt:null,label:"",limit:45},{name:"직장 2",q:"",pt:null,label:"",limit:45}];
+  var BANDS=["40㎡ 이하","40~60㎡","60~85㎡","85㎡ 초과"];
+  var BUD={kind:"j",band:1,amt:null};
+  var SORT="time";
+  var map=null,dMarks=[],aMarks=[],lines=[],picking=-1;
+  var last=null,shown=30,sel=null,selRoutes=null;
+  var saved=[];try{saved=JSON.parse(localStorage.getItem("commute-saved2")||"[]")}catch(e){}
+  var WAIT=4;try{var w0=parseFloat(localStorage.getItem("commute-wait"));if(isFinite(w0)&&w0>=0&&w0<=20)WAIT=w0}catch(e){}
 
-  function renderPlaces(){
-    var box=$("places");box.textContent="";box.style.display="flex";box.style.flexDirection="column";box.style.gap="10px";
-    places.forEach(function(p,i){
-      var d=el("div","place");var b=el("b");var dot=el("span","dot");dot.style.background=COLORS[i];b.appendChild(dot);b.appendChild(document.createTextNode(p.role));d.appendChild(b);
-      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="역 이름 또는 주소 (예: 강남역, 테헤란로 152)";inp.setAttribute("aria-label",p.role+" 역 이름 또는 주소");inp.autocomplete="off";
-      inp.addEventListener("input",function(){p.q=inp.value;p.cands=suggest(inp.value);drawCands()});
-      inp.addEventListener("keydown",function(e){if(e.key==="Enter")find(i)});
-      var fb=el("button","ghost","찾기");fb.type="button";fb.addEventListener("click",function(){find(i)});
-      r.appendChild(inp);r.appendChild(fb);d.appendChild(r);
-      var pb=el("button",picking===i?"on":"ghost",picking===i?"지도를 눌러 위치를 정하세요":"지도에서 직접 찍기");pb.type="button";
-      pb.addEventListener("click",function(){picking=picking===i?-1:i;renderPlaces()});d.appendChild(pb);
-      var cw=el("div","row");cw.style.flexWrap="wrap";d.appendChild(cw);
-      function drawCands(){cw.textContent="";cw.style.display=p.cands&&p.cands.length?"flex":"none";
-        (p.cands||[]).forEach(function(st){var cb=el("button","ghost",stLabel(st));cb.type="button";cb.style.padding="5px 9px";cb.style.fontSize="13px";
-          cb.addEventListener("click",function(){pickStation(i,st)});cw.appendChild(cb)})}
-      drawCands();
-      d.appendChild(el("p","where",p.pt?"설정됨: "+(p.label||p.pt.lat.toFixed(5)+", "+p.pt.lng.toFixed(5)):"아직 위치가 없습니다"));
-      box.appendChild(d);
-    });
-    $("addDest").disabled=places.length>=5;
-    renderFinder();
-    renderShare();
-  }
-  function setPoint(i,lat,lng,label){places[i].pt={lat:lat,lng:lng};places[i].label=label||"";drawMarkers();renderPlaces()}
-  // 지도에서 찍은 점: 먼저 가까운 역으로 이름을 붙이고, 네이버 Reverse Geocoding 이 켜져 있으면 주소로 바꾼다.
-  function pickOnMap(i,lat,lng){
-    var n=nearStation(lat,lng),near=n?stLabel(n.st).replace(/ \(.*$/,"")+" 근처":"";
-    setPoint(i,lat,lng,near?near+" (지도에서 찍음)":"지도에서 찍은 위치 "+lat.toFixed(4)+", "+lng.toFixed(4));
-    try{
-      if(!naver.maps.Service||!naver.maps.Service.reverseGeocode)return;
-      naver.maps.Service.reverseGeocode({coords:new naver.maps.LatLng(lat,lng),orders:"roadaddr,addr"},function(status,res){
-        var p=places[i];if(!p||!p.pt||p.pt.lat!==lat||p.pt.lng!==lng)return;
-        if(status!==naver.maps.Service.Status.OK)return;
-        var a=res&&res.v2&&res.v2.address,addr=a&&(a.roadAddress||a.jibunAddress);
-        if(addr){p.label=addr+(near?" · "+near:"");renderPlaces()}
-      });
-    }catch(e){}
-  }
-  function drawMarkers(){
-    if(!map)return;markers.forEach(function(m){m.setMap(null)});markers=[];
-    var bounds=null;
-    places.forEach(function(p,i){if(!p.pt)return;var pos=new naver.maps.LatLng(p.pt.lat,p.pt.lng);
-      markers.push(new naver.maps.Marker({position:pos,map:map,title:p.role,icon:{content:'<div style="background:'+COLORS[i]+';color:#fff;padding:4px 8px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;transform:translate(-50%,-50%)">'+p.role+'</div>'}}));
-      if(!bounds)bounds=new naver.maps.LatLngBounds(pos,pos);else bounds.extend(pos)});
-    if(bounds&&markers.length>1)map.fitBounds(bounds,{top:60,right:60,bottom:60,left:60});else if(bounds)map.setCenter(bounds.getCenter());
-  }
-  // 내장 역 목록: 역명|위도,경도|노선
+  // ── 역 목록과 검색
   var STN=String(window.STATIONS_RAW||"").split("\n").filter(Boolean).map(function(l){var a=l.split("|"),c=(a[1]||"").split(",");
     return {name:a[0],lat:parseFloat(c[0]),lng:parseFloat(c[1]),lines:(a[2]||"").split(","),key:normStn(a[0].replace(/\(.*$/,""))}}).filter(function(x){return isFinite(x.lat)&&isFinite(x.lng)});
   function normStn(t){t=String(t||"").replace(/\s+/g,"");return t.length>1?t.replace(/역$/,""):t}
   function stLabel(st){return st.name.replace(/\(.*$/,"").replace(/역$/,"")+"역 ("+st.lines.join("·")+")"}
-  function pickStation(i,st){places[i].cands=null;places[i].q=st.name;setPoint(i,st.lat,st.lng,stLabel(st))}
+  function stShort(st){return st.name.replace(/\(.*$/,"").replace(/역$/,"")+"역"}
   function matchStations(q){
-    var k=normStn(q);if(!k)return [];
-    var full=String(q).replace(/\s+/g,"");
+    var k=normStn(q);if(!k)return [];var full=String(q).replace(/\s+/g,"");
     var ex=STN.filter(function(s){return s.key===k||s.name===full});if(ex.length)return ex;
     if(/\d/.test(k)||k.length<2)return [];
     return STN.filter(function(s){return s.key.indexOf(k)===0}).slice(0,6);
   }
-  function nearStation(lat,lng){var best=null,bd=1e9;STN.forEach(function(s){var dy=(s.lat-lat)*111,dx=(s.lng-lng)*88,d=Math.sqrt(dx*dx+dy*dy);if(d<bd){bd=d;best=s}});
-    return best&&bd<=1.5?{st:best,km:bd}:null}
-  // 입력 중 추천: 두 글자 이상 쳤을 때만, 최대 5곳
-  function suggest(q){var k=normStn(q);if(k.length<2||/\d/.test(k))return null;
-    var m=STN.filter(function(s){return s.key.indexOf(k)===0}).slice(0,5);return m.length?m:null}
-  function find(i){
-    var q=(places[i].q||"").trim();if(!q){say(places[i].role+"의 역 이름이나 주소를 입력해 주세요.");return}
-    var ms=matchStations(q);
-    if(ms.length===1){say("");pickStation(i,ms[0]);return}
-    if(ms.length>1){say("같은 이름으로 찾은 역이 여러 곳입니다. 아래에서 골라 주세요.");places[i].cands=ms;renderPlaces();return}
-    if(!window.naver||!naver.maps.Service){say("지도가 아직 준비되지 않았습니다. 네이버 지도 키 설정을 확인해 주세요.");return}
-    say("");
-    naver.maps.Service.geocode({query:q},function(status,res){
-      var a=res&&res.v2&&res.v2.addresses&&res.v2.addresses[0];
-      if(status!==naver.maps.Service.Status.OK||!a){say("'"+q+"'를 역 이름이나 주소로 찾지 못했습니다. 역 이름, 도로명·지번 주소로 입력하거나 지도에서 직접 찍어 주세요.");return}
-      setPoint(i,parseFloat(a.y),parseFloat(a.x),a.roadAddress||a.jibunAddress||q);
-    });
+  function suggest(q){var k=normStn(q);if(k.length<2||/\d/.test(k))return null;var m=STN.filter(function(s){return s.key.indexOf(k)===0}).slice(0,5);return m.length?m:null}
+  function kmBetween(a,b){return Math.sqrt(Math.pow((a.lat-b.lat)*111,2)+Math.pow((a.lng-b.lng)*88,2))}
+  function nearStation(lat,lng){var best=null,bd=1e9;STN.forEach(function(s){var d=kmBetween({lat:lat,lng:lng},s);if(d<bd){bd=d;best=s}});return best&&bd<=1.5?{st:best,km:bd}:null}
+
+  // ── 단지 자료 (apts.js)
+  var AP=(function(){var P=window.APTS;if(!P||!P.raw)return null;
+    function cells(t){return String(t||"").split(",").map(function(x){if(!x)return null;var p=x.split(":");return [+p[0],+p[1]||0]})}
+    var rows=P.raw.split("\n").filter(Boolean).map(function(l){var a=l.split("|"),c=(a[1]||"").split(",");
+      return {name:a[0],lat:+c[0],lng:+c[1],area:a[2]||"",year:a[3]||"",s:cells(a[4]),j:cells(a[5]),approx:a[6]==="a"}}).filter(function(d){return isFinite(d.lat)&&isFinite(d.lng)});
+    rows.forEach(function(r,i){r.id=i});
+    return rows.length?{rows:rows,period:P.period||"",complete:!!P.complete}:null})();
+  // 단지마다 1.2km 안 역과 걸어가는 시간(분)을 미리 구해 둔다
+  var NEAR=null;
+  function prepNear(){
+    if(NEAR||!AP)return;var grid={};
+    STN.forEach(function(s,i){var k=Math.floor(s.lat*50)+"_"+Math.floor(s.lng*40);(grid[k]=grid[k]||[]).push(i)});
+    NEAR=AP.rows.map(function(r){var gy=Math.floor(r.lat*50),gx=Math.floor(r.lng*40),out=[];
+      for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){(grid[(gy+dy)+"_"+(gx+dx)]||[]).forEach(function(i){var d=kmBetween(r,STN[i]);if(d<=1.2)out.push([i,d*1.3/0.08])})}
+      return out});
   }
 
-  // ODsay: 출발지 → 도착지 대중교통 경로. 빠른 순으로 최대 3개를 구간 정보와 함께 돌려준다.
-  var WAIT=4; try{var w=parseFloat(localStorage.getItem("commute-wait"));if(isFinite(w)&&w>=0)WAIT=w}catch(e){}
-  function legsOf(path){
-    return (path.subPath||[]).filter(function(sp){return sp.trafficType!==3||sp.sectionTime>0}).map(function(sp){
-      if(sp.trafficType===3)return {type:"walk",min:sp.sectionTime,label:"도보",pts:[]};
-      var lane=(sp.lane&&sp.lane[0])||{},isSub=sp.trafficType===1;
-      var name=isSub?String(lane.name||"지하철").replace(/^수도권\s*/,""):"버스 "+(lane.busNo||"");
-      var st=(sp.passStopList&&sp.passStopList.stations)||[];
-      var pts=st.map(function(x){return [parseFloat(x.y),parseFloat(x.x)]}).filter(function(p){return isFinite(p[0])&&isFinite(p[1])});
-      if(!pts.length&&sp.startY&&sp.endY)pts=[[parseFloat(sp.startY),parseFloat(sp.startX)],[parseFloat(sp.endY),parseFloat(sp.endX)]];
-      return {type:isSub?"subway":"bus",min:sp.sectionTime,label:name,from:sp.startName||"",to:sp.endName||"",stops:sp.stationCount||0,pts:pts};
-    });
-  }
-  function route(from,to){
-    var base=C.ODSAY_PROXY||"https://api.odsay.com/v1/api/searchPubTransPathT";
-    var url=base+"?SX="+from.lng+"&SY="+from.lat+"&EX="+to.lng+"&EY="+to.lat+"&OPT=0"+(C.ODSAY_PROXY?"":"&apiKey="+encodeURIComponent(C.ODSAY_KEY||""));
-    return fetch(url).then(function(r){var st=r.status;return r.json().then(function(d){return {st:st,d:d}},function(){return {st:st,d:null}})},function(){throw new Error("길찾기 서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 잠시 뒤 다시 시도해 주세요.")}).then(function(x){
-      var d=x.d;
-      if(!d||d.error||x.st>=400){var e=d&&d.error;if(Array.isArray(e))e=e[0];throw odsayError(x.st,e)}
-      var paths=d.result&&d.result.path;if(!paths||!paths.length)throw new Error("이 구간은 대중교통 경로를 찾지 못했습니다.");
-      return paths.map(function(p){var inf=p.info,boards=(inf.busTransitCount||0)+(inf.subwayTransitCount||0);
-        return {move:inf.totalTime,boards:boards,transfer:Math.max(0,boards-1),walk:inf.totalWalk||0,fare:inf.payment||0,legs:legsOf(p)}})
-        .sort(function(a,b){return (a.move+a.boards*WAIT)-(b.move+b.boards*WAIT)}).slice(0,3);
-    });
-  }
-  // ODsay 오류를 사람이 읽을 수 있는 안내로 바꾼다. 한도 초과는 e.limit=true 로 표시해 남은 호출을 멈춘다.
-  function odsayError(status,e){
-    var code=String((e&&e.code)!=null?e.code:""),raw=String((e&&(e.message||e.msg))||""),t=(code+" "+raw).toLowerCase(),err;
-    if(status===429||/limit|exceed|quota|초과|한도/.test(t)){err=new Error("오늘 무료 조회 한도를 모두 썼습니다. 내일 다시 이용해 주세요.");err.limit=true;return err}
-    if(status===401||status===403||/auth|key|인증/.test(t))return new Error("길찾기 키 인증에 실패했습니다. 사이트 관리자에게 알려 주세요.");
-    if(code==="-98"||code==="-99"||/700m/.test(t))return new Error("두 지점이 너무 가까워(약 700m 이내) 대중교통 경로가 없습니다. 걸어갈 수 있는 거리입니다.");
-    if(code==="3"||code==="4"||code==="5")return new Error("출발지나 도착지 근처에 정류장이 없습니다. 위치를 조금 옮겨 다시 시도해 주세요.");
-    if(code==="6")return new Error("대중교통 길찾기를 지원하지 않는 지역입니다.");
-    return new Error("길찾기 서비스에 일시적인 문제가 있습니다. 잠시 뒤 다시 시도해 주세요."+(raw?" ("+raw+")":""));
-  }
-  // ── 동네 찾기: 내장 전철 노선망으로 모든 역에서 각 직장까지의 시간을 추정한다 (실제 길찾기 호출 없음)
-  var NET=null,areaMarks=[],lastAreas=null;
+  // ── 노선망: 목적지에서 모든 역까지의 추정 시간
+  var NET=null;
   var CRUISE={"GTX-A":150,"공항철도":90,"신분당선":80,"1호선":75,"경의중앙선":75,"경춘선":75,"경강선":75,"서해선":75,"수인분당선":70,"4호선":65,"김포골드라인":60,"의정부경전철":50,"에버라인":50,"우이신설선":50,"신림선":50};
   var EXTRA={"GTX-A":5,"경강선":6,"경춘선":6,"서해선":4,"경의중앙선":3,"1호선":1,"수인분당선":1};
-  function kmBetween(a,b){return Math.sqrt(Math.pow((a.lat-b.lat)*111,2)+Math.pow((a.lng-b.lng)*88,2))}
   function buildNet(){
-    if(NET)return NET;var LN=window.NET_LINES||[],adj={},sl={};
+    if(NET&&NET.wait===WAIT)return NET;var LN=window.NET_LINES||[],adj={},sl={};
     function add(u,v,w){(adj[u]=adj[u]||[]).push([v,w])}
     String(window.NET_EDGES||"").split(";").forEach(function(e){var x=e.split(","),a=+x[0],b=+x[1],l=+x[2];if(!STN[a]||!STN[b])return;
       var t=0.8+kmBetween(STN[a],STN[b])*1.1/((CRUISE[LN[l]]||60)/60);add(a+"_"+l,b+"_"+l,t);add(b+"_"+l,a+"_"+l,t);
@@ -205,7 +153,6 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     for(var i=0;i<STN.length;i++)for(var j=i+1;j<STN.length;j++){var d=kmBetween(STN[i],STN[j]);if(d<=0.5){add("h"+i,"h"+j,d*1.3/0.08);add("h"+j,"h"+i,d*1.3/0.08)}}
     NET={adj:adj,ok:Object.keys(sl).length>0,wait:WAIT};return NET;
   }
-  // 한 지점(직장)에서 모든 역까지의 추정 시간(분). 근처 역까지는 걸어간다고 본다.
   function timesFrom(pt){
     var net=buildNet(),near=STN.map(function(s,i){return [kmBetween(pt,s),i]}).sort(function(a,b){return a[0]-b[0]});
     var seeds=near.filter(function(x){return x[0]<=1.5}).slice(0,4);if(!seeds.length&&near.length&&near[0][0]<=3)seeds=[near[0]];
@@ -213,260 +160,350 @@ th{font-weight:500;color:var(--muted);font-size:12.5px}
     var dist={},q=[];seeds.forEach(function(x){var w=x[0]*1.3/0.08;dist["h"+x[1]]=w;q.push([w,"h"+x[1]])});
     while(q.length){q.sort(function(a,b){return a[0]-b[0]});var c=q.shift(),d=c[0],u=c[1];if(d>dist[u])continue;
       (net.adj[u]||[]).forEach(function(e){var nd=d+e[1];if(dist[e[0]]===undefined||nd<dist[e[0]]){dist[e[0]]=nd;q.push([nd,e[0]])}})}
-    return STN.map(function(s,i){var v=dist["h"+i];return v===undefined?null:Math.round(v)});
+    return STN.map(function(s,i){var v=dist["h"+i];return v===undefined?null:v});
   }
-  // ── 예산 맞춤: 동별 아파트 실거래 중위가격(prices.js)을 역 주변 시세로 바꿔 쓴다
-  var PR=(function(){var P=window.PRICES;if(!P||!P.raw)return null;
-    function arr(t){return String(t||"").split(",").map(function(x){return x===""?null:+x})}
-    var rows=P.raw.split("\n").filter(Boolean).map(function(l){var a=l.split("|"),c=(a[1]||"").split(",");return {name:a[0],lat:+c[0],lng:+c[1],s:arr(a[2]),j:arr(a[3])}}).filter(function(d){return isFinite(d.lat)&&isFinite(d.lng)});
-    return rows.length?{rows:rows,period:P.period||"",complete:!!P.complete}:null})();
-  var BANDS=["40㎡ 이하","40~60㎡","60~85㎡","85㎡ 초과"];
-  var BUD={kind:"j",band:1,amt:null};
+  // 단지 → 목적지 추정 시간: 가까우면 걸어서, 아니면 단지 근처 역까지 걸어가 전철
+  function aptTime(r,i,d,ts){
+    var best=null,km=kmBetween(r,d.pt);if(km<=2.5)best=km*1.3/0.08;
+    if(ts)NEAR[i].forEach(function(x){var v=ts[x[0]];if(v!=null){v+=x[1];if(best==null||v<best)best=v}});
+    return best==null?null:Math.round(best);
+  }
+
+  // ── 가격
   function eok(v){var e=v/10000;return (e>=10?Math.round(e):Math.round(e*10)/10)+"억"}
-  // 역에서 1km 안 동들의 중위값, 없으면 2km 안 가장 가까운 동. {v:만원, names:[동]} 또는 null
-  function priceNear(st){
-    if(!PR)return null;var c=[];
-    PR.rows.forEach(function(d){var v=d[BUD.kind][BUD.band];if(v==null)return;var k=kmBetween(st,d);if(k<=2)c.push([k,v,d.name])});
-    if(!c.length)return null;c.sort(function(a,b){return a[0]-b[0]});
-    var inn=c.filter(function(x){return x[0]<=1});if(!inn.length)inn=[c[0]];
-    var vs=inn.map(function(x){return x[1]}).sort(function(a,b){return a-b}),m=vs.length%2?vs[(vs.length-1)/2]:(vs[vs.length/2-1]+vs[vs.length/2])/2;
-    return {v:m,names:inn.slice(0,3).map(function(x){return x[2]})};
-  }
-  function clearAreas(){areaMarks.forEach(function(m){m.setMap(null)});areaMarks=[]}
-  function findAreas(){
-    var dests=[];places.forEach(function(p,i){if(i>0&&p.pt)dests.push({p:p,i:i})});
-    if(!dests.length){say("직장 위치를 한 곳 이상 먼저 정해 주세요.");return}
-    if(NET&&NET.wait!==WAIT)NET=null;
-    if(!buildNet().ok){say("노선 자료를 불러오지 못했습니다. 새로고침해 주세요.");return}
-    var bad=null,tt=dests.map(function(d){var t=timesFrom(d.p.pt);if(!t&&!bad)bad=d.p.role;return t});
-    if(bad){say(bad+" 근처 3km 안에 전철역이 없어 동네 찾기를 할 수 없습니다.");return}
-    say("");
-    var rows=[];STN.forEach(function(s,k){var ts=[],ok=true;dests.forEach(function(d,j){var v=tt[j][k],lim=d.p.limit||45;if(v===null||v>lim)ok=false;ts.push(v)});
-      if(ok)rows.push({st:s,ts:ts,mx:Math.max.apply(null,ts),sm:ts.reduce(function(a,b){return a+b},0)})});
-    rows.sort(function(a,b){return a.mx-b.mx||a.sm-b.sm});
-    var all=rows.length,noData=0,over=0;
-    if(PR){rows.forEach(function(r){r.pr=priceNear(r.st)});
-      if(BUD.amt){rows=rows.filter(function(r){if(!r.pr){noData++;return false}if(r.pr.v>BUD.amt*10000){over++;return false}return true})}}
-    lastAreas={dests:dests,rows:rows,all:all,noData:noData,over:over,bud:{kind:BUD.kind,band:BUD.band,amt:BUD.amt}};renderFinder();
-    clearAreas();
-    if(map){var bounds=null;rows.slice(0,200).forEach(function(r){var pos=new naver.maps.LatLng(r.st.lat,r.st.lng);
-      var m=new naver.maps.Marker({position:pos,map:map,title:stLabel(r.st)+" · 최대 "+r.mx+"분",zIndex:1,icon:{content:'<div style="width:14px;height:14px;border-radius:50%;background:#12b886;border:2px solid #fff;box-shadow:0 0 0 1px #087f5b;transform:translate(-50%,-50%);cursor:pointer"></div>'}});
-      naver.maps.Event.addListener(m,"click",function(){chooseArea(r.st)});areaMarks.push(m);
-      if(!bounds)bounds=new naver.maps.LatLngBounds(pos,pos);else bounds.extend(pos)});
-      dests.forEach(function(d){var pos=new naver.maps.LatLng(d.p.pt.lat,d.p.pt.lng);if(bounds)bounds.extend(pos)});
-      if(bounds&&rows.length)map.fitBounds(bounds,{top:50,right:50,bottom:50,left:50})}
-  }
-  function chooseArea(st){places[0].cands=null;places[0].q=st.name;setPoint(0,st.lat,st.lng,stLabel(st));say("집 후보를 "+stLabel(st)+"(으)로 바꿨습니다. '소요시간 계산'을 누르면 실제 길찾기로 확인합니다.")}
-  function renderFinder(){
-    var box=$("finder");if(!box)return;box.textContent="";
-    var dests=[];places.forEach(function(p,i){if(i>0&&p.pt)dests.push({p:p,i:i})});
-    var w=el("div","place");w.appendChild(el("b","","조건에 맞는 동네 찾기"));
-    w.appendChild(el("p","where","각자 견딜 수 있는 편도 통근시간을 넣으면, 모든 직장이 그 안에 들어오는 전철역 주변을 찾아 줍니다."));
-    if(!dests.length){w.appendChild(el("p","where","먼저 위에서 직장 위치를 정해 주세요."));box.appendChild(w);return}
-    dests.forEach(function(d){var r=el("div","row");r.style.alignItems="center";var lab=el("label","where");var dot=el("span","dot");dot.style.background=COLORS[d.i];lab.appendChild(dot);lab.appendChild(document.createTextNode(d.p.role+" 최대(분)"));lab.style.flex="1";lab.htmlFor="lim"+d.i;
-      var inp=el("input");inp.type="text";inp.inputMode="numeric";inp.id="lim"+d.i;inp.value=d.p.limit||45;inp.style.flex="0 0 80px";
-      inp.addEventListener("input",function(){var v=parseInt(inp.value,10);if(isFinite(v)&&v>=5&&v<=180)d.p.limit=v});r.appendChild(lab);r.appendChild(inp);w.appendChild(r)});
-    if(PR){
-      w.appendChild(el("b","","예산 (아파트 실거래가 기준)"));
-      function chips(items,cur,set){var r=el("div","row");r.style.flexWrap="wrap";items.forEach(function(t,k){var b=el("button",k===cur?"on":"ghost",t);b.type="button";b.style.padding="5px 9px";b.style.fontSize="13px";b.style.flex="0 0 auto";
-        b.addEventListener("click",function(){set(k);renderFinder()});r.appendChild(b)});return r}
-      w.appendChild(chips(["전세","매매"],BUD.kind==="j"?0:1,function(k){BUD.kind=k?"s":"j"}));
-      w.appendChild(chips(BANDS,BUD.band,function(k){BUD.band=k}));
-      var br=el("div","row");br.style.alignItems="center";var bl=el("label","where","예산 (억 원, 비우면 시세만 표시)");bl.style.flex="1";bl.htmlFor="budAmt";
-      var bi=el("input");bi.type="text";bi.inputMode="decimal";bi.id="budAmt";bi.value=BUD.amt==null?"":BUD.amt;bi.style.flex="0 0 80px";
-      bi.addEventListener("input",function(){var v=parseFloat(bi.value);BUD.amt=isFinite(v)&&v>0?v:null});br.appendChild(bl);br.appendChild(bi);w.appendChild(br);
-    }else w.appendChild(el("p","where","예산 맞춤은 실거래가 자료가 준비되면 여기에 나타납니다."));
-    var fb=el("button","","동네 찾기");fb.type="button";fb.addEventListener("click",findAreas);w.appendChild(fb);
-    if(lastAreas){var rows=lastAreas.rows;
-      var lb=lastAreas.bud||{},kindName=lb.kind==="s"?"매매":"전세";
-      w.appendChild(el("b","",rows.length?"조건에 맞는 역 "+rows.length+"곳":"조건에 맞는 역이 없습니다"));
-      if(lb.amt)w.appendChild(el("p","where","통근시간이 맞는 역 "+lastAreas.all+"곳 중 "+kindName+" "+lb.amt+"억 이하 "+rows.length+"곳 · 예산 초과 "+lastAreas.over+"곳 · 주변 거래 자료 없음 "+lastAreas.noData+"곳"));
-      if(!rows.length)w.appendChild(el("p","where",lb.amt?"시간이나 예산, 면적대를 바꿔 다시 찾아보세요.":"시간을 조금 늘려 다시 찾아보세요."));
-      else{w.appendChild(el("p","where","역을 누르면 집 후보로 들어갑니다. 지도의 초록 점도 누를 수 있습니다."+(rows.length>40?" 가까운 순으로 40곳만 보여 줍니다.":"")));
-        var t=el("table"),tb=el("tbody");
-        rows.slice(0,40).forEach(function(r){var tr=el("tr");var td=el("td");var b=el("button","ghost",stLabel(r.st));b.type="button";b.style.padding="4px 8px";b.style.fontSize="13px";b.style.textAlign="left";
-          b.addEventListener("click",function(){chooseArea(r.st)});td.appendChild(b);tr.appendChild(td);
-          tr.appendChild(el("td","",lastAreas.dests.map(function(d,j){return d.p.role.replace("직장 ","")+" "+r.ts[j]+"분"}).join(" · ")));
-          if(PR){var pc=el("td","",r.pr?kindName+" "+eok(r.pr.v):"자료 없음");if(r.pr)pc.title=r.pr.names.join(", ");pc.style.whiteSpace="nowrap";tr.appendChild(pc)}
-          tb.appendChild(tr)});
-        t.appendChild(tb);w.appendChild(t)}
-      w.appendChild(el("p","note","이 시간은 전철 노선망으로 계산한 추정치입니다(역에서 출발, 탑승마다 대기 "+WAIT+"분 포함). 버스와 급행열차는 반영하지 않았고 실제와 10분 안팎 차이 날 수 있으니, 마음에 드는 역을 골라 '소요시간 계산'으로 확인하세요."));
-      if(PR)w.appendChild(el("p","note","가격은 역에서 1km 안 동네들의 아파트 "+kindName+" 실거래 중위가격("+BANDS[lb.band==null?1:lb.band]+", "+PR.period+", 국토교통부 실거래가 공개자료)입니다. 단지·층·연식에 따라 실제 가격은 크게 다를 수 있습니다."+(PR.complete?"":" 자료를 아직 받는 중이라 일부 지역이 빠져 있을 수 있습니다.")))}
-    box.appendChild(w);
+  function priceOf(r,b){var c=r[b.kind][b.band];return c&&c[1]>0?c:null}
+  function kindName(k){return k==="s"?"매매":"전세"}
+
+  // ── 1단계: 목적지
+  function renderDests(){
+    var box=$("dests");box.textContent="";
+    dests.forEach(function(p,i){
+      var d=el("div","card");
+      var top=el("div","top");var dot=el("span","dot");dot.style.background=COLORS[i];top.appendChild(dot);
+      var nm=el("input","name");nm.type="text";nm.value=p.name;nm.setAttribute("aria-label",(i+1)+"번째 장소 이름");nm.maxLength=12;
+      nm.addEventListener("input",function(){p.name=nm.value.trim()||("장소 "+(i+1));drawDestMarks()});top.appendChild(nm);
+      if(dests.length>1){var xb=el("button","x","×");xb.type="button";xb.title=p.name+" 빼기";xb.setAttribute("aria-label",p.name+" 빼기");
+        xb.addEventListener("click",function(){dests.splice(i,1);if(picking===i)picking=-1;afterDestChange()});top.appendChild(xb)}
+      d.appendChild(top);
+      var r=el("div","row");var inp=el("input");inp.type="text";inp.value=p.q;inp.placeholder="역 이름 또는 주소 (예: 강남역, 테헤란로 152)";inp.setAttribute("aria-label",p.name+" 위치");inp.autocomplete="off";
+      inp.addEventListener("input",function(){p.q=inp.value;p.cands=suggest(inp.value);drawCands()});
+      inp.addEventListener("keydown",function(e){if(e.key==="Enter")find(i)});
+      var fb=el("button","ghost","찾기");fb.type="button";fb.addEventListener("click",function(){find(i)});
+      r.appendChild(inp);r.appendChild(fb);d.appendChild(r);
+      var cw=el("div","row wrap");d.appendChild(cw);
+      function drawCands(){cw.textContent="";cw.style.display=p.cands&&p.cands.length?"flex":"none";
+        (p.cands||[]).forEach(function(st){var cb=el("button","ghost sm",stLabel(st));cb.type="button";cb.addEventListener("click",function(){pickStation(i,st)});cw.appendChild(cb)})}
+      drawCands();
+      var r2=el("div","row");
+      var pb=el("button",(picking===i?"on":"ghost")+" sm",picking===i?"지도를 눌러 주세요":"지도에서 찍기");pb.type="button";
+      pb.addEventListener("click",function(){picking=picking===i?-1:i;renderDests()});r2.appendChild(pb);
+      var sp=el("span");sp.style.flex="1";r2.appendChild(sp);
+      var ll=el("label","where","최대");ll.htmlFor="lim"+i;r2.appendChild(ll);
+      var li=el("input","num");li.type="text";li.inputMode="numeric";li.id="lim"+i;li.value=p.limit;
+      li.addEventListener("input",function(){var v=parseInt(li.value,10);if(isFinite(v)&&v>=5&&v<=180)p.limit=v});r2.appendChild(li);r2.appendChild(el("span","where","분"));
+      d.appendChild(r2);
+      d.appendChild(el("p","where",p.pt?"위치: "+(p.label||p.pt.lat.toFixed(5)+", "+p.pt.lng.toFixed(5)):"아직 위치가 없습니다"));
+      box.appendChild(d);
+    });
+    var ad=$("adds");ad.textContent="";
+    if(dests.length<MAXD)PRESETS.forEach(function(ps){var b=el("button","ghost sm","+ "+ps[0]);b.type="button";
+      b.addEventListener("click",function(){var n=ps[0],k=dests.filter(function(x){return x.name.indexOf(n)===0}).length;
+        dests.push({name:k?n+" "+(k+1):n,q:"",pt:null,label:"",limit:ps[1]});afterDestChange()});ad.appendChild(b)});
+    else ad.appendChild(el("p","where","장소는 최대 "+MAXD+"곳까지 넣을 수 있습니다."));
     renderShare();
+  }
+  function afterDestChange(){last=null;sel=null;selRoutes=null;clearLines();clearAptMarks();renderDests();renderResults();renderDetail();drawDestMarks()}
+  function setPoint(i,lat,lng,label){dests[i].pt={lat:lat,lng:lng};dests[i].label=label||"";drawDestMarks();renderDests()}
+  function pickStation(i,st){dests[i].cands=null;dests[i].q=st.name;setPoint(i,st.lat,st.lng,stLabel(st))}
+  function pickOnMap(i,lat,lng){
+    var n=nearStation(lat,lng),near=n?stShort(n.st)+" 근처":"";
+    setPoint(i,lat,lng,near?near+" (지도에서 찍음)":"지도에서 찍은 위치");
+    try{if(!naver.maps.Service||!naver.maps.Service.reverseGeocode)return;
+      naver.maps.Service.reverseGeocode({coords:new naver.maps.LatLng(lat,lng),orders:"roadaddr,addr"},function(status,res){
+        var p=dests[i];if(!p||!p.pt||p.pt.lat!==lat||p.pt.lng!==lng||status!==naver.maps.Service.Status.OK)return;
+        var a=res&&res.v2&&res.v2.address,addr=a&&(a.roadAddress||a.jibunAddress);if(addr){p.label=addr+(near?" · "+near:"");renderDests()}})}catch(e){}
+  }
+  function find(i){
+    var p=dests[i],q=(p.q||"").trim();if(!q){say(p.name+"의 역 이름이나 주소를 입력해 주세요.");return}
+    var ms=matchStations(q);
+    if(ms.length===1){say("");pickStation(i,ms[0]);return}
+    if(ms.length>1){say("같은 이름의 역이 여러 곳입니다. 아래에서 골라 주세요.");p.cands=ms;renderDests();return}
+    if(!window.naver||!naver.maps.Service){say("지도가 아직 준비되지 않았습니다. 잠시 뒤 다시 눌러 주세요.");return}
+    say("");
+    naver.maps.Service.geocode({query:q},function(status,res){
+      var a=res&&res.v2&&res.v2.addresses&&res.v2.addresses[0];
+      if(status!==naver.maps.Service.Status.OK||!a){say("'"+q+"'를 역 이름이나 주소로 찾지 못했습니다. 역 이름, 도로명·지번 주소로 넣거나 지도에서 찍어 주세요.");return}
+      setPoint(i,parseFloat(a.y),parseFloat(a.x),a.roadAddress||a.jibunAddress||q)});
+  }
+
+  // ── 2단계: 예산
+  function renderBudget(){
+    var box=$("budget");box.textContent="";
+    if(!AP){box.appendChild(el("p","msg","단지 자료를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요."));return}
+    function chips(items,cur,set){var r=el("div","row wrap");items.forEach(function(t,k){var b=el("button",(k===cur?"on":"ghost")+" sm",t);b.type="button";
+      b.setAttribute("aria-pressed",k===cur?"true":"false");b.addEventListener("click",function(){set(k);renderBudget();renderShare()});r.appendChild(b)});return r}
+    box.appendChild(chips(["전세","매매"],BUD.kind==="j"?0:1,function(k){BUD.kind=k?"s":"j"}));
+    box.appendChild(chips(BANDS,BUD.band,function(k){BUD.band=k}));
+    var r=el("div","row");var l=el("label","where",kindName(BUD.kind)+" 최대 금액");l.htmlFor="budAmt";l.style.flex="1";r.appendChild(l);
+    var i=el("input","num");i.type="text";i.inputMode="decimal";i.id="budAmt";i.placeholder="예: 5";i.value=BUD.amt==null?"":BUD.amt;
+    i.addEventListener("input",function(){var v=parseFloat(i.value);BUD.amt=isFinite(v)&&v>0?v:null});r.appendChild(i);r.appendChild(el("span","where","억 원"));box.appendChild(r);
+    box.appendChild(el("p","note","비워 두면 가격과 관계없이 통근 조건만 봅니다. 가격은 최근 1년 이 단지·면적대 실거래의 중위값입니다."));
+  }
+
+  // ── 단지 찾기
+  function search(opts){
+    opts=opts||{};
+    var ds=dests.filter(function(d){return d.pt});
+    if(!ds.length){say("자주 가는 곳의 위치를 한 곳 이상 정해 주세요.");return}
+    if(!AP){say("단지 자료가 없습니다.");return}
+    if(ds.length<dests.length)say("위치를 정하지 않은 장소("+dests.filter(function(d){return !d.pt}).map(function(d){return d.name}).join(", ")+")는 빼고 찾았습니다.");else say("");
+    prepNear();
+    var tss=ds.map(function(d){return timesFrom(d.pt)});
+    var b={kind:BUD.kind,band:BUD.band,amt:BUD.amt},rows=[],noPrice=0,over=0,timeOk=0;
+    AP.rows.forEach(function(r,i){
+      var ts=[],ok=true,sum=0;
+      for(var k=0;k<ds.length;k++){var t=aptTime(r,i,ds[k],tss[k]);if(t==null||t>ds[k].limit){ok=false;break}ts.push(t);sum+=t}
+      if(!ok)return;timeOk++;
+      var pc=priceOf(r,b);
+      if(b.amt){if(!pc){noPrice++;return}if(pc[0]>b.amt*10000){over++;return}}
+      rows.push({r:r,ts:ts,sum:sum,mx:Math.max.apply(null,ts),pc:pc});
+    });
+    last={ds:ds.map(function(d){return {name:d.name,limit:d.limit,i:dests.indexOf(d)}}),rows:rows,timeOk:timeOk,noPrice:noPrice,over:over,b:b};
+    sortRows();shown=30;if(!opts.keepSel){sel=null;selRoutes=null;clearLines();renderDetail()}
+    renderResults();drawAptMarks(true);renderShare();
+    if(!opts.quiet&&window.innerWidth<=820)$("results").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  function sortRows(){if(!last)return;last.rows.sort(SORT==="price"?function(a,b){return (a.pc?a.pc[0]:1e12)-(b.pc?b.pc[0]:1e12)||a.sum-b.sum}:function(a,b){return a.sum-b.sum||a.mx-b.mx})}
+  function tagsOf(x){var t=el("div","tags");last.ds.forEach(function(d,k){var s=el("span","tag",d.name+" "+x.ts[k]+"분");s.style.background=COLORS[d.i]||"#555";t.appendChild(s)});return t}
+  function priceText(pc,b){return pc?kindName(b.kind)+" "+eok(pc[0]):"거래 없음"}
+  function renderResults(){
+    var box=$("results");box.textContent="";if(!last)return;
+    var b=last.b,n=last.rows.length;
+    box.appendChild(el("h2","",n?"조건에 맞는 단지 "+n.toLocaleString("ko-KR")+"곳":"조건에 맞는 단지가 없습니다"));
+    var info="통근 조건을 채운 단지 "+last.timeOk.toLocaleString("ko-KR")+"곳";
+    if(b.amt)info+=" 중 "+kindName(b.kind)+" "+BANDS[b.band]+" "+b.amt+"억 이하 "+n.toLocaleString("ko-KR")+"곳 (예산 초과 "+last.over.toLocaleString("ko-KR")+" · 해당 면적 거래 없음 "+last.noPrice.toLocaleString("ko-KR")+")";
+    box.appendChild(el("p","where",info));
+    if(!n){box.appendChild(el("p","where",last.timeOk?"예산을 올리거나 면적대·전세/매매를 바꿔 보세요.":"최대 시간을 늘리거나 장소를 바꿔 보세요. 가까운 곳은 걸어서, 먼 곳은 전철로 계산합니다."));return}
+    var sr=el("div","row wrap");[["time","통근 합계 짧은 순"],["price","가격 낮은 순"]].forEach(function(o){var bt=el("button",(SORT===o[0]?"on":"ghost")+" sm",o[1]);bt.type="button";
+      bt.addEventListener("click",function(){SORT=o[0];sortRows();shown=30;renderResults();renderShare()});sr.appendChild(bt)});box.appendChild(sr);
+    last.rows.slice(0,shown).forEach(function(x){
+      var bt=el("button","apt"+(sel&&sel.r.id===x.r.id?" sel":""));bt.type="button";
+      bt.appendChild(el("span","pr",priceText(x.pc,b)));bt.appendChild(el("div","nm",x.r.name));
+      bt.appendChild(el("div","sub",x.r.area+(x.r.year?" · "+x.r.year+"년 준공":"")+(x.pc?" · 거래 "+x.pc[1]+"건":"")));
+      bt.appendChild(tagsOf(x));bt.addEventListener("click",function(){choose(x)});box.appendChild(bt)});
+    if(n>shown){var mb=el("button","ghost","더 보기 ("+Math.min(30,n-shown)+"곳)");mb.type="button";mb.addEventListener("click",function(){shown+=30;renderResults()});box.appendChild(mb)}
+  }
+
+  // ── 단지 상세와 실제 경로
+  function choose(x){sel=x;selRoutes=null;clearLines();renderDetail();renderResults();drawAptMarks(false);
+    if(map){map.panTo(new naver.maps.LatLng(x.r.lat,x.r.lng))}
+    $("detail").scrollIntoView({behavior:"smooth",block:"nearest"})}
+  function renderDetail(){
+    var box=$("detail");box.textContent="";if(!sel||!last)return;var x=sel,r=x.r,b=last.b;
+    var c=el("div","card");c.style.borderColor="var(--accent)";
+    var top=el("div","top");var h=el("h2","",r.name);h.style.flex="1";top.appendChild(h);
+    var xb=el("button","x","×");xb.type="button";xb.setAttribute("aria-label","단지 닫기");xb.addEventListener("click",function(){sel=null;selRoutes=null;clearLines();renderDetail();renderResults();drawAptMarks(false)});top.appendChild(xb);c.appendChild(top);
+    c.appendChild(el("p","where",r.area+(r.year?" · "+r.year+"년 준공":"")+(r.approx?" · 지도 위치는 동 중심(대략)":"")));
+    var t=el("table"),th=el("thead"),hr=el("tr");["면적","전세","매매"].forEach(function(s){hr.appendChild(el("th","",s))});th.appendChild(hr);t.appendChild(th);
+    var tb=el("tbody");BANDS.forEach(function(bn,k){var tr=el("tr");tr.appendChild(el("td","",bn));
+      ["j","s"].forEach(function(kd){var v=r[kd][k];var td=el("td","",v?eok(v[0])+" ("+v[1]+"건)":"-");if(k===b.band&&kd===b.kind)td.style.fontWeight="700";tr.appendChild(td)});tb.appendChild(tr)});
+    t.appendChild(tb);c.appendChild(t);
+    c.appendChild(el("p","note","최근 1년("+AP.period+") 실거래 중위가격, 괄호는 거래 건수. 층·향·동에 따라 실제 가격은 다릅니다."));
+    var tt=el("table"),tb2=el("tbody");
+    last.ds.forEach(function(d,k){var tr=el("tr");var td=el("td");var dot=el("span","dot");dot.style.display="inline-block";dot.style.marginRight="6px";dot.style.background=COLORS[d.i];td.appendChild(dot);td.appendChild(document.createTextNode(d.name));tr.appendChild(td);
+      tr.appendChild(el("td","","추정 "+x.ts[k]+"분"));
+      var rr=selRoutes&&selRoutes[k];tr.appendChild(el("td","",rr?(rr.opts?"실제 약 "+total(rr.opts[0])+"분":"실패"):"-"));tb2.appendChild(tr)});
+    tt.appendChild(tb2);c.appendChild(tt);
+    var dsNow=last.ds.filter(function(d){return dests[d.i]&&dests[d.i].pt});
+    var rb=el("button","", selRoutes?"경로 다시 계산":"실제 경로 확인 (길찾기 "+dsNow.length+"회 사용)");rb.type="button";rb.id="routeBtn";rb.addEventListener("click",runRoutes);c.appendChild(rb);
+    if(selRoutes){
+      selRoutes.forEach(function(rr,k){var d=last.ds[k];var bx=el("div");var hb=el("b","",d.name+" ");hb.style.color=COLORS[d.i];bx.appendChild(hb);
+        if(!rr.opts){bx.appendChild(el("p","msg",rr.err));c.appendChild(bx);return}
+        var o=rr.opts[0];bx.appendChild(document.createTextNode("약 "+total(o)+"분 · 환승 "+o.transfer+"회 · "+o.fare.toLocaleString("ko-KR")+"원"));
+        var ol=el("ol","legs");o.legs.forEach(function(g){ol.appendChild(el("li","",g.type==="walk"?"도보 "+g.min+"분":g.label+" "+g.min+"분 ("+g.from+" → "+g.to+")"))});bx.appendChild(ol);c.appendChild(bx)});
+      c.appendChild(el("p","note","실제 경로는 ODsay 길찾기 결과에 탑승마다 대기 "+WAIT+"분을 더한 값입니다."));
+    }
+    var sv=el("button","ghost","비교 목록에 담기");sv.type="button";sv.addEventListener("click",function(){
+      saved=saved.filter(function(s){return !(s.name===r.name&&s.area===r.area)});
+      saved.unshift({name:r.name,area:r.area,price:x.pc?priceText(x.pc,b)+" ("+BANDS[b.band]+")":"-",times:last.ds.map(function(d,k){var rr=selRoutes&&selRoutes[k];return d.name+" "+(rr&&rr.opts?total(rr.opts[0])+"분":"약 "+x.ts[k]+"분")})});
+      saved=saved.slice(0,10);try{localStorage.setItem("commute-saved2",JSON.stringify(saved))}catch(e){}renderSaved();say("비교 목록에 담았습니다.",true)});c.appendChild(sv);
+    box.appendChild(c);
   }
   function total(o){return Math.round(o.move+o.boards*WAIT)}
-  var lastHome=null,lastOut=[],lines=[];
-  function calc(){
-    var home=places[0];if(!home.pt){say("집 후보 위치를 먼저 정해 주세요.");return}
-    var dests=[];places.forEach(function(p,i){if(i>0&&p.pt)dests.push({p:p,i:i})});
-    if(!dests.length){say("도착지를 한 곳 이상 정해 주세요.");return}
-    if(!C.ODSAY_PROXY&&!C.ODSAY_KEY){say("config.js에 ODsay 키가 없습니다. README의 설정 순서를 확인해 주세요.");return}
-    say("");$("go").disabled=true;$("result").textContent="계산 중입니다…";
-    var out=[];
-    // 한도 보호를 위해 하나씩 차례로 호출한다
-    var stopped=false;
-    dests.reduce(function(chain,d){return chain.then(function(){
-      if(stopped){out.push({p:d.p,i:d.i,err:"오늘 조회 한도가 끝나 계산하지 못했습니다."});return}
-      return route(home.pt,d.p.pt).then(function(opts){out.push({p:d.p,i:d.i,opts:opts,sel:0})},function(e){if(e.limit)stopped=true;out.push({p:d.p,i:d.i,err:e.message})})})},Promise.resolve())
-    .then(function(){$("go").disabled=false;lastHome=home;lastOut=out;showResult();$("result").scrollIntoView({block:"nearest"})});
+  function runRoutes(){
+    if(!sel||!last)return;var x=sel,from={lat:x.r.lat,lng:x.r.lng};
+    if(!C.ODSAY_PROXY&&!C.ODSAY_KEY){say("길찾기 키가 설정되지 않았습니다.");return}
+    var btn=$("routeBtn");if(btn){btn.disabled=true;btn.textContent="계산 중…"}
+    var out=[],stopped=false;
+    last.ds.reduce(function(ch,d){return ch.then(function(){
+      var p=dests[d.i];if(!p||!p.pt){out.push({err:"장소 위치가 바뀌어 계산하지 않았습니다."});return}
+      if(stopped){out.push({err:"오늘 조회 한도가 끝나 계산하지 못했습니다."});return}
+      return route(from,p.pt).then(function(o){out.push({opts:o})},function(e){if(e.limit)stopped=true;out.push({err:e.message})})})},Promise.resolve())
+    .then(function(){if(sel!==x)return;selRoutes=out;renderDetail();drawRoutes()});
   }
-  function drawRoutes(){
-    lines.forEach(function(l){l.setMap(null)});lines=[];if(!map||!lastHome)return;
-    lastOut.forEach(function(o){if(!o.opts)return;var col=COLORS[o.i],cur=[lastHome.pt.lat,lastHome.pt.lng];
-      function seg(a,b,dash){lines.push(new naver.maps.Polyline({map:map,path:[a,b].map(function(p){return new naver.maps.LatLng(p[0],p[1])}),strokeColor:col,strokeWeight:dash?3:6,strokeOpacity:dash?0.7:0.85,strokeStyle:dash?"shortdash":"solid"}))}
-      o.opts[o.sel].legs.forEach(function(g){if(!g.pts.length)return;seg(cur,g.pts[0],true);
-        lines.push(new naver.maps.Polyline({map:map,path:g.pts.map(function(p){return new naver.maps.LatLng(p[0],p[1])}),strokeColor:col,strokeWeight:6,strokeOpacity:0.85,strokeLineJoin:"round"}));
-        cur=g.pts[g.pts.length-1]});
-      seg(cur,[o.p.pt.lat,o.p.pt.lng],true)});
+  function legsOf(path){
+    return (path.subPath||[]).filter(function(sp){return sp.trafficType!==3||sp.sectionTime>0}).map(function(sp){
+      if(sp.trafficType===3)return {type:"walk",min:sp.sectionTime,label:"도보",pts:[]};
+      var lane=(sp.lane&&sp.lane[0])||{},isSub=sp.trafficType===1;
+      var name=isSub?String(lane.name||"지하철").replace(/^수도권\s*/,""):"버스 "+(lane.busNo||"");
+      var st=(sp.passStopList&&sp.passStopList.stations)||[];
+      var pts=st.map(function(q){return [parseFloat(q.y),parseFloat(q.x)]}).filter(function(p){return isFinite(p[0])&&isFinite(p[1])});
+      if(!pts.length&&sp.startY&&sp.endY)pts=[[parseFloat(sp.startY),parseFloat(sp.startX)],[parseFloat(sp.endY),parseFloat(sp.endX)]];
+      return {type:isSub?"subway":"bus",min:sp.sectionTime,label:name,from:sp.startName||"",to:sp.endName||"",pts:pts};
+    });
   }
-  function showResult(){
-    var home=lastHome,out=lastOut,box=$("result");box.textContent="";
-    var ok=out.filter(function(o){return o.opts});
-    if(ok.length){var ts=ok.map(function(o){return total(o.opts[o.sel])}),mx=Math.max.apply(null,ts),sm=ts.reduce(function(a,b){return a+b},0);
-      var s=el("div","sum");var l=el("div");l.appendChild(el("div","where","가장 오래 걸리는 쪽"));l.appendChild(el("div","big",mx+"분"));
-      var r2=el("div");r2.appendChild(el("div","where","편도 합계"));r2.appendChild(el("div","big",sm+"분"));s.appendChild(l);s.appendChild(r2);box.appendChild(s)}
-    out.forEach(function(o){
-      var card=el("div","dest");var h=el("b");var dot=el("span","dot");dot.style.background=COLORS[o.i];h.appendChild(dot);h.appendChild(document.createTextNode(o.p.role));card.appendChild(h);
-      if(!o.opts){var er=el("p","msg",o.err);card.appendChild(er);box.appendChild(card);return}
-      var r=o.opts[o.sel];
-      card.appendChild(el("div","big","약 "+total(r)+"분"));
-      card.appendChild(el("p","where","이동 "+r.move+"분 + 대기 추정 "+Math.round(r.boards*WAIT)+"분 · 환승 "+r.transfer+"회 · 도보 "+r.walk+"m · "+r.fare.toLocaleString("ko-KR")+"원"));
-      var ol=el("ol","legs");
-      r.legs.forEach(function(g){ol.appendChild(el("li","",g.type==="walk"?"도보 "+g.min+"분":g.label+" "+g.min+"분 ("+g.from+" → "+g.to+(g.stops?", "+g.stops+"개 역·정류장":"")+")"))});
-      card.appendChild(ol);
-      if(o.opts.length>1){var alt=el("div","row");alt.style.flexWrap="wrap";
-        o.opts.forEach(function(x,k){var b=el("button",k===o.sel?"on":"ghost","경로 "+(k+1)+" · "+total(x)+"분");b.type="button";b.style.padding="5px 9px";b.style.fontSize="13px";
-          b.addEventListener("click",function(){o.sel=k;showResult()});alt.appendChild(b)});card.appendChild(alt)}
-      box.appendChild(card)});
-    if(ok.length){
-      var wr=el("div","place");var lab=el("label","where","탑승 1회당 대기시간 추정 (분)");lab.htmlFor="wait";wr.appendChild(lab);
-      var row=el("div","row");var wi=el("input");wi.type="text";wi.id="wait";wi.inputMode="decimal";wi.value=WAIT;row.appendChild(wi);
-      var wb=el("button","ghost","적용");wb.type="button";wb.addEventListener("click",function(){var v=parseFloat(wi.value);if(isFinite(v)&&v>=0&&v<=20){WAIT=v;try{localStorage.setItem("commute-wait",String(v))}catch(e){}
-        lastOut.forEach(function(o){if(o.opts){var cur=o.opts[o.sel];o.opts.sort(function(a,b){return total(a)-total(b)});o.sel=o.opts.indexOf(cur)}});showResult()}});row.appendChild(wb);wr.appendChild(row);
-      wr.appendChild(el("p","note","ODsay의 소요시간에는 버스·지하철을 기다리는 시간이 들어 있지 않습니다. 그래서 탈 때마다 이 값을 더해 보여 줍니다. 출근 시간대 실제 시간과 차이가 나면 값을 조정하세요."));
-      box.appendChild(wr);
-      var sv=el("button","ghost","이 집 후보를 비교 목록에 저장");sv.type="button";
-      sv.addEventListener("click",function(){saved.push({name:home.label&&home.label.indexOf("지도에서 찍은 위치")!==0?home.label:"집 후보 "+(saved.length+1),times:out.map(function(o){return {role:o.p.role,min:o.opts?total(o.opts[o.sel]):null}})});
-        try{localStorage.setItem("commute-saved",JSON.stringify(saved))}catch(e){}renderSaved()});box.appendChild(sv)}
-    drawRoutes();
-    renderShare();
+  function route(from,to){
+    var base=C.ODSAY_PROXY||"https://api.odsay.com/v1/api/searchPubTransPathT";
+    var url=base+"?SX="+from.lng+"&SY="+from.lat+"&EX="+to.lng+"&EY="+to.lat+"&OPT=0"+(C.ODSAY_PROXY?"":"&apiKey="+encodeURIComponent(C.ODSAY_KEY||""));
+    return fetch(url).then(function(r){var st=r.status;return r.json().then(function(d){return {st:st,d:d}},function(){return {st:st,d:null}})},function(){throw new Error("길찾기 서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.")}).then(function(x){
+      var d=x.d;if(!d||d.error||x.st>=400){var e=d&&d.error;if(Array.isArray(e))e=e[0];throw odsayError(x.st,e)}
+      var paths=d.result&&d.result.path;if(!paths||!paths.length)throw new Error("이 구간은 대중교통 경로를 찾지 못했습니다.");
+      return paths.map(function(p){var inf=p.info,boards=(inf.busTransitCount||0)+(inf.subwayTransitCount||0);
+        return {move:inf.totalTime,boards:boards,transfer:Math.max(0,boards-1),walk:inf.totalWalk||0,fare:inf.payment||0,legs:legsOf(p)}})
+        .sort(function(a,b){return total(a)-total(b)}).slice(0,3);
+    });
   }
+  function odsayError(status,e){
+    var code=String((e&&e.code)!=null?e.code:""),raw=String((e&&(e.message||e.msg))||""),t=(code+" "+raw).toLowerCase(),err;
+    if(status===429||/limit|exceed|quota|초과|한도/.test(t)){err=new Error("오늘 무료 조회 한도를 모두 썼습니다. 내일 다시 이용해 주세요.");err.limit=true;return err}
+    if(status===401||status===403||/auth|key|인증/.test(t))return new Error("길찾기 키 인증에 실패했습니다. 사이트 관리자에게 알려 주세요.");
+    if(code==="-98"||code==="-99"||/700m/.test(t))return new Error("너무 가까워(약 700m 이내) 대중교통 경로가 없습니다. 걸어갈 수 있는 거리입니다.");
+    if(code==="3"||code==="4"||code==="5")return new Error("근처에 정류장이 없어 경로를 찾지 못했습니다.");
+    if(code==="6")return new Error("대중교통 길찾기를 지원하지 않는 지역입니다.");
+    return new Error("길찾기 서비스에 일시적인 문제가 있습니다. 잠시 뒤 다시 시도해 주세요."+(raw?" ("+raw+")":""));
+  }
+
+  // ── 비교 목록
   function renderSaved(){
     var box=$("saved");box.textContent="";if(!saved.length)return;
-    box.appendChild(el("b","","저장한 집 후보 비교"));
+    box.appendChild(el("h2","","비교 목록"));
     var t=el("table"),tb=el("tbody");
-    saved.forEach(function(s,i){var tr=el("tr");tr.appendChild(el("td","",s.name));
-      tr.appendChild(el("td","",s.times.map(function(x){return x.role+" "+(x.min==null?"-":x.min+"분")}).join(" · ")));
-      var td=el("td"),b=el("button","ghost","삭제");b.type="button";b.style.padding="3px 8px";b.addEventListener("click",function(){saved.splice(i,1);try{localStorage.setItem("commute-saved",JSON.stringify(saved))}catch(e){}renderSaved()});td.appendChild(b);tr.appendChild(td);tb.appendChild(tr)});
+    saved.forEach(function(s,i){var tr=el("tr");var td=el("td");td.appendChild(el("b","",s.name));td.appendChild(el("div","where",s.area+" · "+s.price));tr.appendChild(td);
+      var t2=el("td","",s.times.join(" · "));t2.style.fontSize="12.5px";tr.appendChild(t2);
+      var t3=el("td"),db=el("button","x","×");db.type="button";db.setAttribute("aria-label",s.name+" 빼기");db.addEventListener("click",function(){saved.splice(i,1);try{localStorage.setItem("commute-saved2",JSON.stringify(saved))}catch(e){}renderSaved()});t3.appendChild(db);tr.appendChild(t3);tb.appendChild(tr)});
     t.appendChild(tb);box.appendChild(t);
   }
 
-  // ── 결과 공유: 조건을 링크(# 뒤, 서버로 보내지 않음)에 담고, 요약을 PNG로 그린다
+  // ── 지도
+  function drawDestMarks(){
+    if(!map)return;dMarks.forEach(function(m){m.setMap(null)});dMarks=[];var bounds=null;
+    dests.forEach(function(p,i){if(!p.pt)return;var pos=new naver.maps.LatLng(p.pt.lat,p.pt.lng);var lab=document.createElement("div");lab.textContent=p.name;
+      lab.setAttribute("style","background:"+COLORS[i]+";color:#fff;padding:4px 8px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;transform:translate(-50%,-50%)");
+      dMarks.push(new naver.maps.Marker({position:pos,map:map,title:p.name,zIndex:50,icon:{content:lab.outerHTML}}));
+      if(!bounds)bounds=new naver.maps.LatLngBounds(pos,pos);else bounds.extend(pos)});
+    if(bounds&&!last){if(dMarks.length>1)map.fitBounds(bounds,{top:60,right:60,bottom:60,left:60});else map.setCenter(bounds.getCenter())}
+  }
+  function clearAptMarks(){aMarks.forEach(function(m){m.setMap(null)});aMarks=[]}
+  function drawAptMarks(fit){
+    if(!map)return;clearAptMarks();if(!last)return;var bounds=null;
+    last.rows.slice(0,300).forEach(function(x){var isSel=sel&&sel.r.id===x.r.id,pos=new naver.maps.LatLng(x.r.lat,x.r.lng),sz=isSel?18:12;
+      var m=new naver.maps.Marker({position:pos,map:map,title:x.r.name+" · "+priceText(x.pc,last.b),zIndex:isSel?40:10,
+        icon:{content:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+(isSel?'#1f6feb':'#12b886')+';border:2px solid #fff;box-shadow:0 0 0 1px '+(isSel?'#0b4bb3':'#087f5b')+';transform:translate(-50%,-50%);cursor:pointer"></div>'}});
+      naver.maps.Event.addListener(m,"click",function(){choose(x)});aMarks.push(m);
+      if(!bounds)bounds=new naver.maps.LatLngBounds(pos,pos);else bounds.extend(pos)});
+    if(fit&&bounds){dests.forEach(function(p){if(p.pt)bounds.extend(new naver.maps.LatLng(p.pt.lat,p.pt.lng))});map.fitBounds(bounds,{top:50,right:50,bottom:50,left:50})}
+  }
+  function clearLines(){lines.forEach(function(l){l.setMap(null)});lines=[]}
+  function drawRoutes(){
+    clearLines();if(!map||!sel||!selRoutes)return;
+    selRoutes.forEach(function(rr,k){if(!rr.opts)return;var d=last.ds[k],p=dests[d.i];if(!p||!p.pt)return;var col=COLORS[d.i],cur=[sel.r.lat,sel.r.lng];
+      function seg(a,b){lines.push(new naver.maps.Polyline({map:map,path:[a,b].map(function(q){return new naver.maps.LatLng(q[0],q[1])}),strokeColor:col,strokeWeight:3,strokeOpacity:0.7,strokeStyle:"shortdash"}))}
+      rr.opts[0].legs.forEach(function(g){if(!g.pts.length)return;seg(cur,g.pts[0]);
+        lines.push(new naver.maps.Polyline({map:map,path:g.pts.map(function(q){return new naver.maps.LatLng(q[0],q[1])}),strokeColor:col,strokeWeight:6,strokeOpacity:0.85,strokeLineJoin:"round"}));cur=g.pts[g.pts.length-1]});
+      seg(cur,[p.pt.lat,p.pt.lng])});
+  }
+
+  // ── 공유: 조건을 링크(# 뒤, 서버로 보내지 않음)에 담고, 상위 단지를 PNG로 그린다
   function b64e(t){return btoa(unescape(encodeURIComponent(t))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
   function b64d(t){t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";return decodeURIComponent(escape(atob(t)))}
   function r5(x){return Math.round(x*1e5)/1e5}
-  function shareState(){
-    return {v:1,p:places.map(function(p){return [p.role,p.pt?(p.label||""):"",p.pt?r5(p.pt.lat):null,p.pt?r5(p.pt.lng):null,p.limit||null]}),
-      b:[BUD.kind,BUD.band,BUD.amt],w:WAIT,f:lastAreas?1:0};
+  function shareUrl(){
+    var st={v:2,d:dests.map(function(p){return [p.name,p.pt?(p.label||""):"",p.pt?r5(p.pt.lat):null,p.pt?r5(p.pt.lng):null,p.limit]}),b:[BUD.kind,BUD.band,BUD.amt],w:WAIT,o:SORT,f:last?1:0};
+    return location.origin+location.pathname+"#s="+b64e(JSON.stringify(st));
   }
-  function shareUrl(){return location.origin+location.pathname+"#s="+b64e(JSON.stringify(shareState()))}
+  function okPt(a,b){return isFinite(a)&&isFinite(b)&&a!==null&&b!==null&&Math.abs(a-37.5)<2&&Math.abs(b-127)<2}
   function restoreShared(){
     var m=/^#s=([A-Za-z0-9_-]+)$/.exec(location.hash||"");if(!m)return false;
     try{
-      var st=JSON.parse(b64d(m[1]));if(!st||st.v!==1||!Array.isArray(st.p)||!st.p.length||st.p.length>5)return false;
-      places=st.p.map(function(a){var ok=isFinite(a[2])&&isFinite(a[3])&&Math.abs(a[2]-37.5)<2&&Math.abs(a[3]-127)<2;
-        return {role:String(a[0]||"").slice(0,12)||"도착지",q:ok?String(a[1]||"").slice(0,80):"",pt:ok?{lat:+a[2],lng:+a[3]}:null,label:ok?String(a[1]||"").slice(0,80):"",limit:(+a[4]>=5&&+a[4]<=180)?+a[4]:null}});
+      var st=JSON.parse(b64d(m[1]));if(!st)return false;var list=[];
+      if(st.v===2&&Array.isArray(st.d))list=st.d.map(function(a){return {name:a[0],label:a[1],lat:a[2],lng:a[3],limit:a[4]}});
+      else if(st.v===1&&Array.isArray(st.p))list=st.p.slice(1).map(function(a){return {name:a[0],label:a[1],lat:a[2],lng:a[3],limit:a[4]||45}});  // 예전 링크: 첫 칸(집 후보)은 버림
+      else return false;
+      list=list.slice(0,MAXD);if(!list.length)return false;
+      dests=list.map(function(a,i){var ok=okPt(+a.lat,+a.lng),lim=+a.limit;
+        return {name:String(a.name||"").slice(0,12)||("장소 "+(i+1)),q:ok?String(a.label||"").slice(0,80):"",pt:ok?{lat:+a.lat,lng:+a.lng}:null,label:ok?String(a.label||"").slice(0,80):"",limit:(lim>=5&&lim<=180)?lim:45}});
       if(Array.isArray(st.b)){BUD.kind=st.b[0]==="s"?"s":"j";BUD.band=(+st.b[1]>=0&&+st.b[1]<=3)?+st.b[1]:1;BUD.amt=(+st.b[2]>0)?+st.b[2]:null}
       if(isFinite(st.w)&&st.w>=0&&st.w<=20)WAIT=+st.w;
+      if(st.o==="price")SORT="price";
       try{history.replaceState(null,"",location.pathname)}catch(e){}
-      return {finder:!!st.f};
+      return {run:st.v===1||!!st.f};
     }catch(e){return false}
   }
   function renderShare(){
-    var box=$("share");if(!box)return;box.textContent="";
-    if(!places.some(function(p){return p.pt}))return;
-    var w=el("div","place");w.appendChild(el("b","","결과 공유"));
-    w.appendChild(el("p","where","지금 입력한 위치와 조건을 링크나 이미지로 보낼 수 있습니다. 받는 사람은 링크를 열면 같은 조건으로 바로 볼 수 있습니다."));
-    var r=el("div","row");r.style.flexWrap="wrap";
-    if(navigator.share){var sh=el("button","","공유하기");sh.type="button";sh.addEventListener("click",function(){navigator.share({title:"두 직장 통근 지도",text:"우리 집 후보와 통근시간",url:shareUrl()}).catch(function(){})});r.appendChild(sh)}
+    var box=$("share");box.textContent="";if(!dests.some(function(p){return p.pt}))return;
+    var c=el("div","card");c.appendChild(el("b","","결과 공유"));
+    c.appendChild(el("p","where","입력한 장소와 조건을 링크나 이미지로 보낼 수 있습니다. 링크를 연 사람에게 같은 조건의 단지 목록이 바로 나옵니다."));
+    var r=el("div","row wrap");
+    if(navigator.share){var sh=el("button","","공유하기");sh.type="button";sh.addEventListener("click",function(){navigator.share({title:"두 직장 통근 지도",text:"통근시간과 예산에 맞는 아파트 단지",url:shareUrl()}).catch(function(){})});r.appendChild(sh)}
     var cp=el("button",navigator.share?"ghost":"","링크 복사");cp.type="button";cp.addEventListener("click",copyLink);r.appendChild(cp);
-    var im=el("button","ghost","이미지로 저장");im.type="button";im.addEventListener("click",saveImage);r.appendChild(im);
-    w.appendChild(r);
-    var out=el("input");out.type="text";out.id="shareOut";out.readOnly=true;out.style.display="none";out.setAttribute("aria-label","공유 링크");w.appendChild(out);
-    w.appendChild(el("p","note","링크와 이미지에는 입력한 위치가 그대로 들어갑니다. 집 주소를 넣었다면 보낼 사람을 확인하세요. 길찾기 결과는 링크에 담기지 않아, 받는 사람이 '소요시간 계산'을 누르면 다시 계산됩니다."));
-    box.appendChild(w);
+    var im=el("button","ghost","이미지로 저장");im.type="button";im.disabled=!last||!last.rows.length;im.title=im.disabled?"단지를 먼저 찾아 주세요":"";im.addEventListener("click",saveImage);r.appendChild(im);
+    c.appendChild(r);
+    var o=el("input");o.type="text";o.id="shareOut";o.readOnly=true;o.style.display="none";o.setAttribute("aria-label","공유 링크");c.appendChild(o);
+    c.appendChild(el("p","note","링크와 이미지에는 입력한 위치가 그대로 들어갑니다. 집이나 어린이집 주소를 넣었다면 보낼 사람을 확인하세요."));
+    box.appendChild(c);
   }
   function copyLink(){
     var url=shareUrl(),o=$("shareOut");
-    function fallback(){o.style.display="block";o.value=url;o.focus();o.select();say("링크를 아래 칸에서 복사해 주세요.")}
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(function(){say("링크를 복사했습니다. 메신저에 붙여 넣어 보내세요.")},fallback);else fallback();
+    function fb(){o.style.display="block";o.value=url;o.focus();o.select();say("링크를 아래 칸에서 복사해 주세요.")}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(function(){say("링크를 복사했습니다. 메신저에 붙여 넣어 보내세요.",true)},fb);else fb();
   }
   function saveImage(){
+    if(!last||!last.rows.length)return;
     var W=1080,P=56,FONT='"Apple SD Gothic Neo","Noto Sans KR","Noto Sans CJK KR","Malgun Gothic",sans-serif';
     var cv=document.createElement("canvas"),g=cv.getContext("2d");
     function font(sz,wt){return (wt||400)+" "+sz+"px "+FONT}
     function fit(t,max,f){g.font=f;t=String(t);if(g.measureText(t).width<=max)return t;while(t.length>1&&g.measureText(t+"…").width>max)t=t.slice(0,-1);return t+"…"}
-    // 그릴 줄을 먼저 모은다: [종류, 데이터]
-    var L=[],ok=lastOut.filter(function(o){return o.opts}),homeOk=lastHome&&lastHome.pt&&ok.length;
-    if(homeOk){
-      L.push(["h2","집 후보에서 직장까지"]);L.push(["home",lastHome.label||"지도에서 고른 위치"]);
-      lastOut.forEach(function(o){if(!o.opts){L.push(["dest",{c:COLORS[o.i],role:o.p.role,place:o.p.label,t:"계산 실패",sub:""}]);return}
-        var r=o.opts[o.sel],rt=r.legs.filter(function(g){return g.type!=="walk"}).map(function(g){return g.label}).join(" → ");
-        L.push(["dest",{c:COLORS[o.i],role:o.p.role,place:o.p.label,t:"약 "+total(r)+"분",sub:(rt||"도보")+" · 환승 "+r.transfer+"회 · "+r.fare.toLocaleString("ko-KR")+"원"}])});
-    }
-    if(lastAreas&&lastAreas.rows.length){
-      var lb=lastAreas.bud||{},kn=lb.kind==="s"?"매매":"전세";
-      var cond=lastAreas.dests.map(function(d){return d.p.role.replace("직장 ","")+" "+(d.p.limit||45)+"분"}).join(" · ")+(PR?" · "+kn+" "+BANDS[lb.band]+(lb.amt?" "+lb.amt+"억 이하":""):"");
-      L.push(["h2","조건에 맞는 동네 "+lastAreas.rows.length+"곳 (상위 10곳)"]);L.push(["cond",cond]);
-      lastAreas.rows.slice(0,10).forEach(function(r){L.push(["area",{name:stLabel(r.st),t:lastAreas.dests.map(function(d,j){return d.p.role.replace("직장 ","")+" "+r.ts[j]+"분"}).join(" · "),pr:PR?(r.pr?kn+" "+eok(r.pr.v):"자료 없음"):""}])});
-    }
-    if(!L.length){L.push(["h2","입력한 위치"]);places.forEach(function(p,i){if(p.pt)L.push(["dest",{c:COLORS[i],role:p.role,place:p.label,t:"",sub:""}])})}
-    var HT={h2:70,home:44,dest:92,cond:44,area:46},H=170;L.forEach(function(x){H+=HT[x[0]]});H+=130;
-    cv.width=W;cv.height=H;
-    g.fillStyle="#ffffff";g.fillRect(0,0,W,H);g.fillStyle="#1b2430";g.fillRect(0,0,W,120);
-    g.textBaseline="alphabetic";g.fillStyle="#ffffff";g.font=font(40,700);g.fillText("두 직장 통근 지도",P,74);
+    var rows=last.rows.slice(0,10),b=last.b,RH=74;
+    var H=120+40+50+44+44+rows.length*RH+40+100;cv.width=W;cv.height=H;
+    g.fillStyle="#fff";g.fillRect(0,0,W,H);g.fillStyle="#1b2430";g.fillRect(0,0,W,120);
+    g.fillStyle="#fff";g.font=font(40,700);g.fillText("두 직장 통근 지도",P,74);
     var d=new Date(),ds=d.getFullYear()+"."+(d.getMonth()+1)+"."+d.getDate();g.font=font(24);g.fillStyle="#c9d1dc";g.textAlign="right";g.fillText(ds+" 기준",W-P,72);g.textAlign="left";
-    var y=170;
-    L.forEach(function(x){var k=x[0],v=x[1];
-      if(k==="h2"){y+=20;g.fillStyle="#1b2430";g.font=font(30,700);g.fillText(fit(v,W-2*P,font(30,700)),P,y+24);y+=50}
-      else if(k==="home"){g.fillStyle="#5b6575";g.font=font(24);g.fillText(fit("집 후보: "+v,W-2*P,font(24)),P,y+28);y+=44}
-      else if(k==="cond"){g.fillStyle="#5b6575";g.font=font(24);g.fillText(fit("조건: "+v,W-2*P,font(24)),P,y+28);y+=44}
-      else if(k==="dest"){g.fillStyle=v.c;g.beginPath();g.arc(P+10,y+30,10,0,7);g.fill();
-        g.fillStyle="#1b2430";g.font=font(28,700);g.fillText(fit(v.role+"  "+(v.place||""),W-2*P-260,font(28,700)),P+32,y+40);
-        if(v.t){g.font=font(36,800);g.textAlign="right";g.fillText(v.t,W-P,y+42);g.textAlign="left"}
-        if(v.sub){g.fillStyle="#5b6575";g.font=font(22);g.fillText(fit(v.sub,W-2*P-32,font(22)),P+32,y+76)}y+=92}
-      else if(k==="area"){g.strokeStyle="#e3e6ea";g.lineWidth=2;g.beginPath();g.moveTo(P,y);g.lineTo(W-P,y);g.stroke();
-        g.fillStyle="#1b2430";g.font=font(25,600);g.fillText(fit(v.name,430,font(25,600)),P,y+32);
-        g.fillStyle="#5b6575";g.font=font(23);g.fillText(fit(v.t,330,font(23)),P+450,y+32);
-        if(v.pr){g.fillStyle="#1b2430";g.font=font(24,700);g.textAlign="right";g.fillText(v.pr,W-P,y+32);g.textAlign="left"}y+=46}
-    });
+    var y=180;g.fillStyle="#1b2430";g.font=font(30,700);g.fillText("조건에 맞는 단지 "+last.rows.length.toLocaleString("ko-KR")+"곳"+(last.rows.length>rows.length?" (상위 "+rows.length+"곳)":""),P,y);y+=46;
+    g.font=font(23);g.fillStyle="#5b6575";
+    g.fillText(fit("장소: "+last.ds.map(function(x){return x.name+" "+x.limit+"분 이내"}).join(" · "),W-2*P,font(23)),P,y);y+=36;
+    g.fillText(fit("예산: "+kindName(b.kind)+" "+BANDS[b.band]+(b.amt?" "+b.amt+"억 이하":" (제한 없음)")+" · "+(SORT==="price"?"가격 낮은 순":"통근 합계 짧은 순"),W-2*P,font(23)),P,y);y+=30;
+    rows.forEach(function(x){g.strokeStyle="#e3e6ea";g.lineWidth=2;g.beginPath();g.moveTo(P,y);g.lineTo(W-P,y);g.stroke();
+      g.fillStyle="#1b2430";g.font=font(26,700);g.fillText(fit(x.r.name,620,font(26,700)),P,y+34);
+      g.font=font(25,700);g.textAlign="right";g.fillText(priceText(x.pc,b),W-P,y+34);g.textAlign="left";
+      var xx=P;g.font=font(20,600);
+      g.fillStyle="#5b6575";var sub=fit(x.r.area,260,font(20));g.font=font(20);g.fillText(sub,xx,y+62);xx+=g.measureText(sub).width+16;
+      last.ds.forEach(function(dd,k){var t=dd.name+" "+x.ts[k]+"분";g.font=font(20,600);var tw=g.measureText(t).width;if(xx+tw>W-P)return;
+        g.fillStyle=COLORS[dd.i];g.fillText(t,xx,y+62);xx+=tw+14});
+      y+=RH});
     var fy=H-100;g.fillStyle="#f2f4f7";g.fillRect(0,fy,W,100);g.fillStyle="#5b6575";g.font=font(20);
-    g.fillText(fit("추정치이며 실제와 다를 수 있습니다 · 경로 ODsay"+(PR?" · 시세 국토교통부 실거래가("+PR.period+")":""),W-2*P,font(20)),P,fy+40);
+    g.fillText(fit("통근시간은 전철·도보 추정치 · 가격은 국토교통부 실거래가 단지별 중위값("+AP.period+")",W-2*P,font(20)),P,fy+40);
     g.fillStyle="#1b2430";g.font=font(22,700);g.fillText("K-Brief 무료 도구 · "+location.host+location.pathname.replace(/index\.html$/,""),P,fy+74);
-    cv.toBlob(function(b){if(!b){say("이미지를 만들지 못했습니다.");return}
-      var a=document.createElement("a"),u=URL.createObjectURL(b);a.href=u;a.download="통근지도-"+d.getFullYear()+(""+(d.getMonth()+1)).padStart(2,"0")+(""+d.getDate()).padStart(2,"0")+".png";
-      document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},2000);say("이미지를 저장했습니다.")},"image/png");
+    cv.toBlob(function(bl){if(!bl){say("이미지를 만들지 못했습니다.");return}
+      var a=document.createElement("a"),u=URL.createObjectURL(bl);a.href=u;a.download="통근지도-단지-"+d.getFullYear()+(""+(d.getMonth()+1)).padStart(2,"0")+(""+d.getDate()).padStart(2,"0")+".png";
+      document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},2000);say("이미지를 저장했습니다.",true)},"image/png");
   }
 
-  $("addDest").addEventListener("click",function(){if(places.length<5){places.push({role:"도착지 "+String.fromCharCode(65+places.length-1),q:"",pt:null});renderPlaces()}});
-  $("go").addEventListener("click",calc);
+  // ── 시작
+  $("go").addEventListener("click",function(){search()});
   var restored=restoreShared();
-  renderPlaces();renderSaved();
-  if(restored){if(restored.finder&&places.some(function(p,i){return i>0&&p.pt}))findAreas();say("공유받은 조건을 불러왔습니다. 집 후보가 있으면 '소요시간 계산'을 눌러 경로를 확인하세요.")}
-  (function(){var n=$("dataNote");if(!n)return;n.textContent="자료 기준: "+(PR?"아파트 시세 "+PR.period+" 국토교통부 실거래가(매주 월요일 갱신)":"아파트 시세 준비 중")+" · 역·노선 서울 열린데이터광장 역사마스터(2026년 11월)"})();
-
-  // 네이버 지도 SDK 로드 (키는 config.js에서)
-  if(!C.NAVER_KEY_ID){say("config.js에 네이버 지도 키가 없습니다. README의 설정 순서를 확인해 주세요.");return}
-  window.navermap_authFailure=function(){say("네이버 지도 인증에 실패했습니다. 키와 등록한 웹 서비스 URL을 확인해 주세요.")};
+  renderDests();renderBudget();renderSaved();
+  $("dataNote").textContent=AP?"자료 기준: 아파트 "+AP.rows.length.toLocaleString("ko-KR")+"개 단지, 실거래 "+AP.period+"(매주 월요일 갱신)"+(AP.complete?"":" · 일부 단지 위치는 아직 동 중심으로 표시"):"";
+  if(restored){if(restored.run&&dests.some(function(p){return p.pt}))search({quiet:true});say("공유받은 조건을 불러왔습니다. 단지를 누르면 실제 경로를 확인할 수 있습니다.",true)}
+  if(!C.NAVER_KEY_ID){say("네이버 지도 키가 설정되지 않았습니다.");return}
+  window.navermap_authFailure=function(){say("네이버 지도 인증에 실패했습니다. 사이트 관리자에게 알려 주세요.")};
   var s=document.createElement("script");
   s.src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId="+encodeURIComponent(C.NAVER_KEY_ID)+"&submodules=geocoder";
   s.onload=function(){
     map=new naver.maps.Map("map",{center:new naver.maps.LatLng(37.5665,126.9780),zoom:11});
     naver.maps.Event.addListener(map,"click",function(e){if(picking<0)return;var i=picking;picking=-1;pickOnMap(i,e.coord.lat(),e.coord.lng())});
-    if(restored){drawMarkers();if(lastAreas)findAreas()}
+    drawDestMarks();if(last)drawAptMarks(true);
   };
-  s.onerror=function(){say("네이버 지도를 불러오지 못했습니다. 네트워크와 키 설정을 확인해 주세요.")};
+  s.onerror=function(){say("네이버 지도를 불러오지 못했습니다. 새로고침해 주세요.")};
   document.head.appendChild(s);
 })();
 </script>
