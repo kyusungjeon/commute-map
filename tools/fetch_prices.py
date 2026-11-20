@@ -12,7 +12,8 @@ from concurrent.futures import ThreadPoolExecutor
 import xml.etree.ElementTree as ET
 
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE=os.path.join(ROOT,'.cache','molit2')  # molit2: 준공연도 포함(2026-11); GEO=os.path.join(ROOT,'data','geo_cache.json')
+# molit2: 준공연도 포함(2026-11)
+CACHE=os.path.join(ROOT,'.cache','molit2'); GEO=os.path.join(ROOT,'data','geo_cache.json')
 MONTHS=int(os.environ.get('MONTHS','12')); GEO_MAX=int(os.environ.get('GEO_MAX','25000') or 25000)
 APT_GEO=os.path.join(ROOT,'data','apt_geo.json')
 BANDS=[40,60,85]            # 전용면적 경계: ≤40, 40~60, 60~85, 85 초과
