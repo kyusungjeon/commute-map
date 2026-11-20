@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""수도권 아파트 실거래가(매매·전세)를 받아 법정동별 중위가격 prices.js 를 만든다.
+"""수도권 아파트 실거래가(매매·전세)를 받아 법정동별 중위가격 prices.js 와 단지별 중위가격 apts.js 를 만든다.
 
 - 자료: 공공데이터포털 '국토교통부_아파트 매매 실거래가 자료', '국토교통부_아파트 전월세 실거래가 자료'
 - 동 위치: 그 동에서 거래가 가장 많은 단지의 지번을 네이버 Geocoding 으로 한 번만 찾아 data/geo_cache.json 에 저장
 - 필요한 환경변수: MOLIT_KEY, NAVER_ID, NAVER_SECRET  (GitHub Secrets 에만 넣는다. 저장소에 쓰지 않는다)
-- 개별 거래는 저장소에 남기지 않고 동 단위 통계만 내보낸다.
+- 단지 위치: 단지 지번을 네이버 Geocoding 으로 한 번만 찾아 data/apt_geo.json 에 저장(못 찾으면 동 위치로 대신하고 표시)
+- 개별 거래는 저장소에 남기지 않고 동·단지 단위 통계(중위가격·건수)만 내보낸다.
 """
 import os,sys,json,time,datetime,statistics,threading,urllib.request,urllib.parse,urllib.error
 from concurrent.futures import ThreadPoolExecutor
 import xml.etree.ElementTree as ET
 
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE=os.path.join(ROOT,'.cache','molit'); GEO=os.path.join(ROOT,'data','geo_cache.json')
-MONTHS=int(os.environ.get('MONTHS','12')); GEO_MAX=int(os.environ.get('GEO_MAX','800') or 800)
+CACHE=os.path.join(ROOT,'.cache','molit2')  # molit2: 준공연도 포함(2026-11); GEO=os.path.join(ROOT,'data','geo_cache.json')
+MONTHS=int(os.environ.get('MONTHS','12')); GEO_MAX=int(os.environ.get('GEO_MAX','25000') or 25000)
+APT_GEO=os.path.join(ROOT,'data','apt_geo.json')
 BANDS=[40,60,85]            # 전용면적 경계: ≤40, 40~60, 60~85, 85 초과
 MIN_N=3                     # 거래가 이보다 적으면 값을 비운다
 
@@ -45,7 +47,7 @@ def num(t):
     except Exception:return None
 
 def parse(kind,xml):
-    """응답 XML → (rows, totalCount). row = [동, 전용면적, 금액(만원), 단지명, 지번]"""
+    """응답 XML → (rows, totalCount). row = [동, 전용면적, 금액(만원), 단지명, 지번, 준공연도]"""
     try:root=ET.fromstring(xml)
     except ET.ParseError:raise ApiStop('XML 아님: '+xml[:200])
     code=root.findtext('.//resultCode')
@@ -63,7 +65,7 @@ def parse(kind,xml):
             if (num(g('monthlyRent')) or 0)>0:continue      # 월세 제외, 전세만
             amt=num(g('deposit'))
         if not amt:continue
-        rows.append([dong,area,amt,g('aptNm'),g('jibun')])
+        rows.append([dong,area,amt,g('aptNm'),g('jibun'),g('buildYear')])
     return rows,int(num(root.findtext('.//totalCount')) or 0)
 
 def http(url,headers=None,tries=3):
@@ -133,10 +135,22 @@ def aggregate(data):
     """→ {(code,동): {'s':[4 lists],'j':[4 lists],'cx':{(단지,지번):건수}}}"""
     out={}
     for (kind,code,ym),rows in data.items():
-        for dong,area,amt,apt,jibun in rows:
+        for dong,area,amt,apt,jibun,*_ in rows:
             d=out.setdefault((code,dong),{'s':[[],[],[],[]],'j':[[],[],[],[]],'cx':{}})
             d['s' if kind=='sale' else 'j'][band(area)].append(amt)
             if jibun:d['cx'][(apt,jibun)]=d['cx'].get((apt,jibun),0)+1
+    return out
+
+def aggregate_apts(data):
+    """→ {(code,동,단지,지번): {'s':[4],'j':[4],'y':{준공연도:건수}}}"""
+    out={}
+    for (kind,code,ym),rows in data.items():
+        for row in rows:
+            dong,area,amt,apt,jibun=row[:5];yr=row[5] if len(row)>5 else ''
+            if not apt or not jibun:continue
+            d=out.setdefault((code,dong,apt.strip(),jibun.strip()),{'s':[[],[],[],[]],'j':[[],[],[],[]],'y':{}})
+            d['s' if kind=='sale' else 'j'][band(area)].append(amt)
+            if yr:d['y'][yr]=d['y'].get(yr,0)+1
     return out
 
 def geocode(q,nid,sec):
@@ -166,6 +180,49 @@ def locate(agg,codes,nid,sec):
     os.makedirs(os.path.dirname(GEO),exist_ok=True)
     json.dump(geo,open(GEO,'w'),ensure_ascii=False,sort_keys=True,indent=0)
     return geo,used,stopped
+
+def locate_apts(apts,codes,nid,sec,budget):
+    """단지 지번 위치 찾기. 거래 많은 단지부터, 여러 개를 동시에. 일일 한도에 걸리면 멈추고 다음 실행에 이어 간다."""
+    geo=json.load(open(APT_GEO)) if os.path.exists(APT_GEO) else {}
+    todo=[k for k,v in sorted(apts.items(),key=lambda kv:-sum(len(x) for x in kv[1]['s']+kv[1]['j'])) if f'{k[0]}|{k[1]}|{k[3]}' not in geo][:max(budget,0)]
+    stop=[];done=[0];lock=threading.Lock()
+    def work(k):
+        if stop:return None
+        code,dong,apt,jibun=k;sido,sgg=codes[k[0]]
+        try:pt=geocode(' '.join(x for x in(sido,sgg,dong,jibun) if x),nid,sec)
+        except ApiStop as e:
+            if not stop:print('!! 단지 위치 찾기 중단:',e,flush=True)
+            stop.append(str(e));return None
+        with lock:
+            done[0]+=1
+            if done[0]%1000==0:print(f'  단지 위치 {done[0]}/{len(todo)} 찾는 중',flush=True)
+        return f'{code}|{dong}|{jibun}',(pt or [])
+    with ThreadPoolExecutor(4) as ex:
+        for r in ex.map(work,todo):
+            if r:geo[r[0]]=r[1]
+    os.makedirs(os.path.dirname(APT_GEO),exist_ok=True)
+    json.dump(geo,open(APT_GEO,'w'),ensure_ascii=False,sort_keys=True,indent=0)
+    left=sum(1 for k in apts if f'{k[0]}|{k[1]}|{k[3]}' not in geo)
+    return geo,done[0],(stop[0] if stop else None),left
+
+def build_apts(apts,codes,ageo,dgeo,ms,complete):
+    """apts.js: 단지명|위도,경도|시군구 동|준공연도|매매 4칸|전세 4칸|위치표시. 각 칸 '중위가격:건수'(만원), 거래 없으면 빈칸.
+    위치표시 a = 지번을 못 찾아 동 위치로 대신함."""
+    def cell(v):return f"{int(round(statistics.median(v)))}:{len(v)}" if v else ''
+    lines=[]
+    for k,d in sorted(apts.items()):
+        code,dong,apt,jibun=k;pt=ageo.get(f'{code}|{dong}|{jibun}');flag=''
+        if not pt:pt=dgeo.get(f'{code}|{dong}');flag='a'
+        if not pt:continue
+        sido,sgg=codes[code];label=('인천 '+sgg).strip() if sido.startswith('인천') else sgg
+        yr=max(d['y'].items(),key=lambda kv:kv[1])[0] if d['y'] else ''
+        nm=apt.replace('|',' ').replace('`',"'")
+        lines.append(f"{nm}|{pt[0]},{pt[1]}|{label} {dong}|{yr}|{','.join(cell(x) for x in d['s'])}|{','.join(cell(x) for x in d['j'])}|{flag}")
+    period=f"{ms[-1][:4]}년 {int(ms[-1][4:])}월~{ms[0][:4]}년 {int(ms[0][4:])}월"
+    js=("// 수도권 아파트 단지별 실거래 중위가격(만원)과 건수. tools/fetch_prices.py 가 만든다. 출처: 국토교통부 실거래가 공개자료\n"
+        "// 형식: 단지명|위도,경도|시군구 동|준공연도|매매(≤40,40~60,60~85,85초과 각 '중위:건수')|전세(같은 순서)|a=위치가 동 중심(대략)\n"
+        f'window.APTS={{period:"{period}",made:"{datetime.date.today().isoformat()}",complete:{"true" if complete else "false"},raw:`'+'\n'.join(lines)+'`};\n')
+    return js,len(lines)
 
 def med(v):return str(int(round(statistics.median(v)))) if len(v)>=MIN_N else ''
 
@@ -203,6 +260,15 @@ def main():
     js,n=build(agg,codes,geo,ms,got>=want and not todo)
     open(os.path.join(ROOT,'commute','prices.js'),'w',encoding='utf-8').write(js)
     print(f'동 위치: 이번에 {used}곳 찾음, 남은 {todo}곳 / prices.js 에 {n}개 동 기록')
+    apts=aggregate_apts(data);stop3=None;aused=0
+    if nid and sec:ageo,aused,stop3,aleft=locate_apts(apts,codes,nid,sec,GEO_MAX-used)
+    else:
+        ageo=json.load(open(APT_GEO)) if os.path.exists(APT_GEO) else {};aleft=sum(1 for k in apts if f'{k[0]}|{k[1]}|{k[3]}' not in ageo)
+    ajs,an=build_apts(apts,codes,ageo,geo,ms,got>=want and not aleft)
+    open(os.path.join(ROOT,'commute','apts.js'),'w',encoding='utf-8').write(ajs)
+    miss=sum(1 for v in ageo.values() if not v)
+    print(f'단지: {len(apts):,}곳 / 위치 이번에 {aused:,}곳 찾음, 남은 {aleft:,}곳, 지번으로 못 찾아 동 위치로 대신 {miss:,}곳 / apts.js 에 {an:,}개 단지 기록({len(ajs)//1024:,}KB)')
+    if stop3 or aleft:print('※ 단지 위치가 아직 남았습니다. 네이버 Geocoding 일일 한도를 확인하고 다시 실행하면 이어서 찾습니다.')
     if stop1:print('※ 실거래가 호출이 중간에 멈췄습니다(일일 한도 등). 내일 다시 실행하면 이어서 받습니다:',stop1)
     if stop2 or todo:print('※ 동 위치가 아직 남았습니다. 다시 실행하면 이어서 찾습니다.')
 

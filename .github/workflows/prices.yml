@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
     inputs:
       geo_max:
-        description: 이번 실행에서 새로 찾을 동 위치 수 (네이버 Geocoding 일일 한도보다 작게)
-        default: "800"
+        description: 이번 실행에서 새로 찾을 동·단지 위치 수 (네이버 Geocoding 일일 한도보다 작게)
+        default: "25000"
   schedule:
     - cron: "23 19 * * 0"   # 매주 월요일 04:23 (한국시간)
 permissions:
@@ -31,5 +31,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add commute/prices.js data/geo_cache.json
+          git add commute/prices.js commute/apts.js data/geo_cache.json data/apt_geo.json
           git diff --cached --quiet || (git commit -m "실거래가 자료 갱신" && git push)
