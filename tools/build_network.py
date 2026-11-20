@@ -1,7 +1,8 @@
 # stations.js(역명|좌표|노선)에서 노선별 역 연결(network.js)을 만든다.
 # 역 순서 원자료가 없어 "같은 노선의 가까운 역끼리 잇는" 최소신장트리로 추정하고,
 # 실제와 다른 부분은 아래 ADD/FORCE/FORBID 로 바로잡는다.
-import math,collections,sys
+import math,collections,sys,os
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','commute'))  # commute/ 폴더의 stations.js·network.js
 src=open('stations.js',encoding='utf-8').read()
 head,body=src.split('`')[0],src.split('`')[1]
 S=[]

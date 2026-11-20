@@ -31,5 +31,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add prices.js data/geo_cache.json
+          git add commute/prices.js data/geo_cache.json
           git diff --cached --quiet || (git commit -m "실거래가 자료 갱신" && git push)

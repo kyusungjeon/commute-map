@@ -201,7 +201,7 @@ def main():
         geo=json.load(open(GEO)) if os.path.exists(GEO) else {};print('NAVER_ID/NAVER_SECRET 이 없어 동 위치 찾기를 건너뜁니다')
     todo=sum(1 for (c,d),v in agg.items() if v['cx'] and f'{c}|{d}' not in geo)
     js,n=build(agg,codes,geo,ms,got>=want and not todo)
-    open(os.path.join(ROOT,'prices.js'),'w',encoding='utf-8').write(js)
+    open(os.path.join(ROOT,'commute','prices.js'),'w',encoding='utf-8').write(js)
     print(f'동 위치: 이번에 {used}곳 찾음, 남은 {todo}곳 / prices.js 에 {n}개 동 기록')
     if stop1:print('※ 실거래가 호출이 중간에 멈췄습니다(일일 한도 등). 내일 다시 실행하면 이어서 받습니다:',stop1)
     if stop2 or todo:print('※ 동 위치가 아직 남았습니다. 다시 실행하면 이어서 찾습니다.')

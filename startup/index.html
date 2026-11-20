@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>창업 타당성 분석기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 좁은 한 칼럼. 질문 5단계(조건 4 + 매물 입력 1) → 채점 결과 → 내가 넣은 매물 비교 목록. */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#18211d; --muted:#5d6a63; --line:#d9dfda;
+  --accent:#0d6a4f; --accent-soft:#e2f0ea;
+  --good:#1c7a4a; --good-bg:#e1f2e7; --warn:#96610a; --warn-bg:#fbefd3; --bad:#b0352b; --bad-bg:#fbe3df;
+  --font-display:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#121815; --surface:#1b2420; --ink:#e8eeea; --muted:#9aa8a0; --line:#2e3a34;
+    --accent:#4fc09a; --accent-soft:#1d3a30;
+    --good:#6fd39a; --good-bg:#173524; --warn:#e9b955; --warn-bg:#3a2e12; --bad:#f08a80; --bad-bg:#40201c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121815; --surface:#1b2420; --ink:#e8eeea; --muted:#9aa8a0; --line:#2e3a34;
+  --accent:#4fc09a; --accent-soft:#1d3a30;
+  --good:#6fd39a; --good-bg:#173524; --warn:#e9b955; --warn-bg:#3a2e12; --bad:#f08a80; --bad-bg:#40201c;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15.5px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding:28px 18px 56px;display:flex;flex-direction:column;gap:20px}
+header h1{font-family:var(--font-display);font-weight:800;font-size:28px;line-height:1.2;margin:0 0 6px}
+header p{margin:0;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:16px}
+.progress{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.progress i{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.progress i u{display:block;height:100%;background:var(--accent)}
+.q{font-family:var(--font-display);font-weight:800;font-size:22px;line-height:1.3;margin:0;text-wrap:balance}
+.help{margin:0;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 13px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:1px}
+.chip small{font-size:12px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:600}
+.chip[aria-pressed="true"] small{color:var(--surface);opacity:.85}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.wide{grid-column:1/-1}
+label{font-size:14px;font-weight:500}
+label em{font-style:normal;color:var(--bad);font-size:12px;margin-left:4px}
+.hint{font-size:12.5px;color:var(--muted)}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
+.inp:focus-within,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.inp input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:17px;font-weight:600;padding:10px 12px;font-variant-numeric:tabular-nums}
+.inp input:focus{outline:none}
+.inp span{padding:0 12px 0 2px;color:var(--muted);font-size:14px;white-space:nowrap}
+.inp.filled{border-color:var(--accent);background:var(--accent-soft)}
+textarea{width:100%;min-height:96px;border:1px dashed var(--muted);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit;font-size:14px;padding:10px 12px;resize:vertical}
+.steps3{margin:0;padding-left:20px;font-size:14px;color:var(--muted)}
+.msg{font-size:14px;margin:0}
+.msg.ok{color:var(--good)} .msg.no{color:var(--bad)}
+.chips.small .chip{padding:5px 10px;font-size:13.5px;border-radius:8px}
+.rankline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rankline b{font-family:var(--font-display);font-weight:800;font-size:26px}
+.rankline .pill{padding:3px 12px}
+.sub{font-family:var(--font-display);font-weight:800;font-size:16px;margin:4px 0 0}
+.nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:9px;padding:11px 20px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:6px 12px;font-size:13.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.chip:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;gap:14px;align-items:center}
+.top h2{font-family:var(--font-display);font-weight:800;font-size:20px;margin:0;flex:1;min-width:0;text-wrap:balance}
+.top h2 small{display:block;font-family:var(--font-body);font-weight:400;font-size:13.5px;color:var(--muted)}
+.scorebox{text-align:center;flex:none;border-radius:10px;padding:8px 14px;line-height:1.15}
+.scorebox b{font-family:var(--font-display);font-weight:800;font-size:30px;font-variant-numeric:tabular-nums;display:block}
+.scorebox span{font-size:12px;font-weight:600}
+.good{background:var(--good-bg);color:var(--good)}
+.warn{background:var(--warn-bg);color:var(--warn)}
+.bad{background:var(--bad-bg);color:var(--bad)}
+.nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.num{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.num span{font-size:12px;color:var(--muted)}
+.num b{font-family:var(--font-display);font-weight:800;font-size:16.5px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checks li{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:start;font-size:14.5px}
+.pill{display:inline-block;font-size:12.5px;font-weight:600;padding:2px 0;border-radius:99px;text-align:center}
+.pos{display:flex;flex-direction:column;gap:12px}
+.posrow{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;align-items:center;font-size:14px}
+.posrow .track{position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--good-bg),var(--warn-bg),var(--bad-bg));border:1px solid var(--line)}
+.posrow .track i{position:absolute;top:-4px;width:4px;height:16px;border-radius:2px;background:var(--ink);transform:translateX(-2px)}
+.posrow .txt{grid-column:2;color:var(--muted);font-size:13px}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:nth-child(2),td:nth-child(2){text-align:left;white-space:normal;min-width:120px}
+th{font-weight:500;color:var(--muted);font-size:12.5px}
+tr.best td{background:var(--accent-soft)}
+tr.now td:nth-child(2){font-weight:600}
+td button{font:inherit;font-size:12.5px;border:0;background:transparent;color:var(--muted);cursor:pointer;text-decoration:underline}
+footer{font-size:12.5px;color:var(--muted)}
+footer ul{margin:6px 0 0;padding-left:18px}
+[hidden]{display:none!important}
+@media (max-width:520px){
+  .fields{grid-template-columns:minmax(0,1fr)}
+  .nums{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .posrow{grid-template-columns:minmax(0,1fr)} .posrow .txt{grid-column:1}
+  .q{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>창업 타당성 분석기</h1>
+  <p>마음에 둔 가게 매물이 돈이 되는 자리인지 100점 만점으로 채점합니다. 질문에 하나씩 답하고, 매물 정보를 붙여 넣으면 됩니다.</p>
+</header>
+
+<section class="card" id="wizard">
+  <div class="progress"><span id="stepNo"></span><i><u id="bar"></u></i></div>
+  <h2 class="q" id="q"></h2>
+  <p class="help" id="help"></p>
+  <div id="body"></div>
+  <div class="nav">
+    <button class="btn ghost" type="button" id="prev">이전</button>
+    <button class="btn" type="button" id="next">다음</button>
+  </div>
+</section>
+
+<div id="result" hidden style="display:flex;flex-direction:column;gap:20px">
+  <section class="card">
+    <div class="top"><h2 id="rName"></h2><div class="scorebox" id="rBox"><b id="rScore"></b><span id="rGrade"></span></div></div>
+    <p class="help" id="rVerdict" style="color:var(--ink)"></p>
+    <div class="nums" id="rNums"></div>
+    <ul class="checks" id="rChecks"></ul>
+  </section>
+  <section class="card" id="rankCard">
+    <h3 class="sub">이 동네 상권 순위 · 서울시 공공데이터</h3>
+    <div class="rankline" id="rRankLine"></div>
+    <div class="nums" id="rRank"></div>
+    <p class="help" id="rankNote"></p>
+  </section>
+  <section class="card" id="posCard">
+    <h3 class="sub" id="posTitle"></h3>
+    <div class="pos" id="rPos"></div>
+    <p class="help" id="posNote"></p>
+  </section>
+  <section class="card">
+    <h3 class="sub" id="listTitle"></h3>
+    <p class="help" id="listNote"></p>
+    <div class="tablebox"><table>
+      <thead><tr><th>순위</th><th>매물</th><th>점수</th><th>상권</th><th>창업비용</th><th>남는 돈</th><th>회수기간</th><th></th></tr></thead>
+      <tbody id="rList"></tbody>
+    </table></div>
+    <div class="nav">
+      <button class="btn" type="button" id="addMore">다른 매물 추가해서 비교</button>
+      <button class="btn ghost" type="button" id="editCond">내 조건 바꾸기</button>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <b>이 결과를 읽는 법</b>
+  <ul>
+    <li>매물에 적힌 매출·마진율·인건비는 파는 사람이 쓴 숫자입니다. 그래서 매출은 고른 비율만큼 낮추고, 마진율은 매도인 값과 업종 기준 중 낮은 쪽을 씁니다.</li>
+    <li>비워 둔 인건비는 매출의 15%, 공과금은 매출의 3%로 가정합니다. 세금과 시설 감가상각은 넣지 않았습니다.</li>
+    <li>창업비용에 임대 보증금이 빠져 있다면 따로 더해서 넣으세요.</li>
+    <li>점수는 수익성 30, 투자금 회수기간 30, 임대료 부담 20, 안전마진 20점입니다. 업종별 기준값은 일반적인 참고치입니다.</li>
+    <li>상권 순위는 서울 열린데이터광장의 서울시 상권분석서비스(추정매출·점포, 행정동 단위)의 최근 4개 분기 자료로 계산했습니다. 카드 결제 기반 추정치이며 서울 밖 지역은 아직 없습니다.</li>
+    <li id="benchFoot">시세 비교 통계는 서울 마포구 카페만 있으며, 다른 지역·업종 시세는 아직 없습니다.</li>
+    <li>넣은 매물은 이 브라우저에만 저장됩니다. 이 결과는 참고 자료이며 수익을 보장하지 않습니다.</li>
+  </ul>
+</footer>
+</div>
+
+<script src="data.js"></script>
+<script src="bench.js"></script>
+<script>
+(function(){
+// 업종: 이름, 원가율 %, 수수료율 %, 매출 대비 임대료 권장 상한 %
+var IND=[["카페·디저트",35,5,15],["한식 음식점",38,6,10],["치킨·호프",42,12,10],["분식·김밥",38,8,10],["피자·버거",36,10,10],["일식·중식",38,6,10],
+ ["주점",35,4,12],["베이커리",38,4,12],["편의점",78,2,5],["반찬·정육·식자재",60,3,8],["소매 (의류·잡화)",55,4,10],["무인매장",55,2,12],
+ ["미용실",10,4,15],["네일·피부관리",12,4,15],["학원·교습소",5,3,15],["헬스·필라테스",5,4,20],["세탁·수선",15,3,12],["그 밖의 업종",40,5,10]];
+// 서울 마포구 카페 매물 통계 (2026-11-15, 10% 단위 분위값). 개별 매물은 담지 않음.
+var BD=window.BENCH_DATA||null;
+var BENCH=BD?{match:function(l){return (l.ind==null?A.industry:l.ind)===0&&(/마포/.test(l.area||"")||l.gu==="마포구")},label:BD.label,date:BD.date,total:BD.total,prem:BD.prem,rent:BD.rent,invSales:BD.invSales,rentRatio:BD.rentRatio}:{match:function(){return false}};
+
+// 업종 → 공공데이터 열 번호 (없으면 null)
+var COL=[0,1,2,3,4,5,6,7,8,9,10,null,11,12,13,14,15,null];
+var GUS=[];(function(){var cur=null;(window.SEOUL_RAW||"").split("\n").forEach(function(l){var p=l.split("|");if(p.length<2)return;var v=p[1].split(",").map(function(x){return x===""?null:+x});
+  if(p[0].charAt(0)==="#"){cur={name:p[0].slice(1),cl:v,dongs:[]};GUS.push(cur)}else if(cur)cur.dongs.push({name:p[0],v:v})})})();
+function findGu(n){for(var i=0;i<GUS.length;i++)if(GUS[i].name===n)return GUS[i];return null}
+function normDong(x){return x.replace(/[\d·]+/g,"").replace(/본동$/,"동")}
+function rankInfo(d){
+  if(!d.gu||!d.dong)return null;var c=COL[d.ind==null?A.industry:d.ind];if(c==null)return {none:"ind"};
+  var g=findGu(d.gu);if(!g)return null;var dn=null;g.dongs.forEach(function(x){if(x.name===d.dong)dn=x});if(!dn||dn.v[c]==null)return {none:"data"};
+  var all=[];GUS.forEach(function(gg){gg.dongs.forEach(function(x){if(x.v[c]!=null)all.push(x.v[c])})});
+  var better=all.filter(function(x){return x>dn.v[c]}).length;
+  var cls=GUS.map(function(gg){return gg.cl[c]}).filter(function(x){return x!=null});
+  return {avg:dn.v[c]*10,n:all.length,rank:better+1,top:(better+1)/all.length,cl:g.cl[c],clN:cls.length,clRank:cls.filter(function(x){return x<g.cl[c]}).length+1};
+}
+var KEY="startup-feasibility-v3";
+var A={industry:0,equity:5000,rate:5.5,wage:300,trust:0.8,list:[]};
+try{var s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)for(var k in A)if(s[k]!==undefined)A[k]=s[k]}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(A))}catch(e){}}
+var draft=blank(), current=null;
+function blank(){return {name:"",area:"",gu:"",dong:"",inv:null,prem:null,sales:null,rent:null,mg:null,lab:null,util:null,etc:null}}
+
+var $=function(id){return document.getElementById(id)};
+function won(v){return Math.round(v).toLocaleString("ko-KR")+"만원"}
+function eok(v){v=Math.round(v);if(v>=10000){var e=Math.floor(v/10000),r=v%10000;return e+"억"+(r?" "+r.toLocaleString("ko-KR")+"만원":"원")}return v.toLocaleString("ko-KR")+"만원"}
+function pct(v){return Math.round(v*100)+"%"}
+function clamp(v){return Math.max(0,Math.min(1,v))}
+function months(m){if(!isFinite(m)||m<=0)return "회수 불가";if(m>240)return "20년 초과";var y=Math.floor(m/12),r=Math.round(m%12);if(r===12){y++;r=0}return (y?y+"년 ":"")+(r||!y?r+"개월":"")}
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+
+/* ---------- 붙여 넣은 글에서 숫자 읽기 ---------- */
+var M="((?:\\d+억\\s*[\\d,]*만?)|(?:[\\d,]+만))";
+function money(s){if(!s)return null;s=s.replace(/[,\s]/g,"");var v=0,m;if(m=s.match(/(\d+)억/))v+=parseInt(m[1],10)*10000;if(m=s.match(/(\d+)만/))v+=parseInt(m[1],10);return v}
+function parseListing(text){
+  var t=text.replace(/\s+/g," "),o={},m;
+  function g(re){var x=t.match(new RegExp(re));return x?x[1]:null}
+  var v;
+  v=g("권리금\\s*"+M+"\\s*\\(매도인")||g("권리금\\s*:?\\s*"+M);if(v)o.prem=money(v);
+  v=g("창업비용\\s*:?\\s*"+M);if(v)o.inv=money(v);
+  v=g("월매출\\s*:?\\s*"+M);if(v)o.sales=money(v);
+  v=g("입점비용\\s*(?:\\(관리비\\s*포함\\))?\\s*:?\\s*"+M)||g("월세\\s*:?\\s*"+M)||g("월임대료\\s*:?\\s*"+M);if(v)o.rent=money(v);
+  v=g("마진율\\s*:?\\s*([\\d.]+)\\s*%");if(v)o.mg=parseFloat(v);
+  v=g("월?인건비\\s*:?\\s*"+M);if(v)o.lab=money(v);
+  v=g("공과비용\\s*:?\\s*"+M);if(v)o.util=money(v);
+  v=g("부대비용\\s*:?\\s*"+M);if(v)o.etc=money(v);
+  m=t.match(/지번 주소\s*(\S+)\s+(\S+[구군시])\s+(\S+[동읍면가])/)||t.match(/(서울\S*|부산\S*|대구\S*|인천\S*|광주\S*|대전\S*|울산\S*|세종\S*|경기\S*|강원\S*|충\S+|전\S+|경\S+|제주\S*)\s+(\S+[구군시])\s+(\S+[동읍면가])/);
+  if(m){o.area=m[2]+" "+m[3];var gg=findGu(m[2]);if(gg){o.gu=gg.name;o.dong="";gg.dongs.some(function(x){if(x.name===m[3]||normDong(x.name)===m[3]){o.dong=x.name;return true}return false})}}
+  var fl=g("층수\\s*(-?\\d+층|지하\\s*\\d*층)"),ar=g("면적\\s*([\\d.]+)\\s*㎡"),no=g("매물\\((\\d+-\\d+)\\)")||g("매물번호\\s*:?\\s*(\\d+-\\d+)");
+  var nm=[];if(m)nm.push(m[3]);if(fl)nm.push(fl);if(ar)nm.push(Math.round(parseFloat(ar))+"㎡");if(no)nm.push("("+no+")");
+  if(nm.length)o.name=nm.join(" ");
+  return o;
+}
+
+/* ---------- 단계 화면 ---------- */
+function chipGroup(opts,isOn,onPick){
+  var box=el("div","chips");box.setAttribute("role","group");
+  opts.forEach(function(o){var b=el("button","chip");b.type="button";b.appendChild(el("span","",o.label));if(o.sub)b.appendChild(el("small","",o.sub));
+    b.setAttribute("aria-pressed",isOn(o.value)?"true":"false");b.addEventListener("click",function(){onPick(o.value);show()});box.appendChild(b)});
+  return box;
+}
+function field(obj,key,id,label,unit,opt){
+  opt=opt||{};
+  var f=el("div","field"+(opt.wide?" wide":""));var l=el("label","",label);l.htmlFor=id;if(opt.req)l.appendChild(el("em","","필수"));f.appendChild(l);
+  var w=el("div","inp"),i=el("input");i.id=id;
+  if(opt.text){i.type="text";i.value=obj[key]||"";i.style.fontSize="15.5px";i.style.fontWeight="500";if(opt.ph)i.placeholder=opt.ph;
+    i.addEventListener("input",function(){obj[key]=i.value;save()})}
+  else{i.type="number";i.min="0";i.step=opt.step||"100";i.inputMode="decimal";i.value=obj[key]==null?"":obj[key];if(opt.ph)i.placeholder=opt.ph;
+    i.addEventListener("input",function(){var v=parseFloat(i.value);obj[key]=isFinite(v)&&v>=0?v:null;save()})}
+  w.appendChild(i);if(unit)w.appendChild(el("span","",unit));f.appendChild(w);if(opt.hint)f.appendChild(el("span","hint",opt.hint));return f;
+}
+function listingForm(){
+  var box=el("div");box.style.display="flex";box.style.flexDirection="column";box.style.gap="14px";
+  var ol=el("ol","steps3");["점포라인 매물 상세 화면을 엽니다.","화면 전체를 선택해 복사합니다 (Ctrl+A, Ctrl+C).","아래 칸에 붙여 넣고(Ctrl+V) 버튼을 누릅니다."].forEach(function(s){ol.appendChild(el("li","",s))});box.appendChild(ol);
+  var ta=el("textarea");ta.id="paste";ta.placeholder="여기에 매물 화면 내용을 붙여 넣으세요";ta.setAttribute("aria-label","매물 화면 내용 붙여 넣기");box.appendChild(ta);
+  var row=el("div","nav");var pb=el("button","btn ghost","붙여 넣은 내용에서 숫자 읽기");pb.type="button";row.appendChild(pb);box.appendChild(row);
+  var msg=el("p","msg");msg.id="pasteMsg";box.appendChild(msg);
+  box.appendChild(el("h3","sub","매물 숫자 확인"));
+  box.appendChild(el("p","help","읽어 온 숫자가 맞는지 확인하고, 틀리거나 빈 칸은 직접 고치세요. 붙여 넣기 없이 직접 써도 됩니다."));
+  var g=el("div","fields");g.id="lform";
+  g.appendChild(field(draft,"name","f_name","매물 이름 (메모용)","",{text:true,wide:true,ph:"예: 연남동 1층 26㎡"}));
+  g.appendChild(field(draft,"area","f_area","지역","",{text:true,wide:true,ph:"예: 마포구 연남동"}));
+  var rb=el("div","field wide");g.appendChild(rb);renderRegion(rb);
+  g.appendChild(field(draft,"inv","f_inv","창업비용 (총 드는 돈)","만원",{req:true,hint:"권리금+보증금+가맹비 등"}));
+  g.appendChild(field(draft,"prem","f_prem","권리금","만원"));
+  g.appendChild(field(draft,"sales","f_sales","월매출 (매도인 주장)","만원",{req:true}));
+  g.appendChild(field(draft,"rent","f_rent","월세 (관리비 포함)","만원",{req:true,step:"10"}));
+  g.appendChild(field(draft,"mg","f_mg","마진율","%",{step:"1",hint:"비우면 업종 기준 적용"}));
+  g.appendChild(field(draft,"lab","f_lab","직원 인건비 (월)","만원",{step:"10",hint:"비우면 매출의 15%"}));
+  g.appendChild(field(draft,"util","f_util","공과금 (월)","만원",{step:"10",hint:"비우면 매출의 3%"}));
+  g.appendChild(field(draft,"etc","f_etc","기타 비용 (월)","만원",{step:"10"}));
+  box.appendChild(g);
+  var err=el("p","msg no");err.id="formErr";box.appendChild(err);
+  pb.addEventListener("click",function(){
+    var o=parseListing(ta.value),keys=Object.keys(o).filter(function(k){return o[k]!=null&&o[k]!==""});
+    var core=["inv","sales","rent"].filter(function(k){return o[k]!=null}).length;
+    if(!ta.value.trim()){msg.className="msg no";msg.textContent="붙여 넣은 내용이 없습니다. 위 칸에 매물 화면을 붙여 넣어 주세요.";return}
+    if(!keys.length){msg.className="msg no";msg.textContent="숫자를 찾지 못했습니다. 아래 칸에 직접 입력해 주세요.";return}
+    keys.forEach(function(k){draft[k]=o[k]});
+    show();
+    var m2=$("pasteMsg");m2.className="msg ok";m2.textContent=keys.length+"개 항목을 읽었습니다."+(core<3?" 필수 항목 중 빈 칸은 직접 채워 주세요.":" 아래 숫자가 맞는지 확인해 주세요.");
+    keys.forEach(function(k){var i=$("f_"+k);if(i)i.parentNode.classList.add("filled")});
+    $("f_inv").scrollIntoView({block:"center"});
+  });
+  return box;
+}
+function renderRegion(rb){
+  rb.textContent="";rb.appendChild(el("label","","서울 매물이면 구와 동을 골라 주세요"));
+  rb.appendChild(el("span","hint","고르면 그 동네 상권이 서울에서 상위 몇 %인지 공공데이터로 계산합니다. 서울이 아니면 건너뛰세요."));
+  function chips(items,cur,pick){var box=el("div","chips small");box.setAttribute("role","group");items.forEach(function(n){var b=el("button","chip",n);b.type="button";b.setAttribute("aria-pressed",cur===n?"true":"false");
+    b.addEventListener("click",function(){pick(cur===n?"":n);save();renderRegion(rb)});box.appendChild(b)});return box}
+  rb.appendChild(chips(GUS.map(function(g){return g.name}),draft.gu,function(n){draft.gu=n;draft.dong=""}));
+  var g=findGu(draft.gu);
+  if(g){rb.appendChild(el("span","hint",draft.dong?"동네: "+draft.dong+" (주소의 동과 다르면 바꿔 주세요)":"매물이 있는 동을 골라 주세요. 주소의 동 이름이 없으면 가장 가까운 동을 고르세요."));
+    rb.appendChild(chips(g.dongs.map(function(x){return x.name}),draft.dong,function(n){draft.dong=n}))}
+}
+var STEPS=[
+ {q:"어떤 업종으로 창업하시나요?",help:"업종에 따라 원가와 적정 임대료 기준이 달라집니다.",
+  body:function(){return chipGroup(IND.map(function(r,i){return {value:i,label:r[0]}}),function(v){return A.industry===v},function(v){A.industry=v})}},
+ {q:"창업에 넣을 수 있는 내 돈은 얼마인가요?",help:"모자라는 금액은 대출로 채운다고 보고 이자를 비용에 넣습니다.",
+  body:function(){var g=el("div","fields");g.appendChild(field(A,"equity","equity","내 돈 (자기자본)","만원",{step:"500",hint:"예: 5천만원이면 5000"}));
+    g.appendChild(field(A,"rate","rate","대출 금리 (연)","%",{step:"0.1",hint:"모르면 5.5 그대로"}));return g}},
+ {q:"한 달에 최소 얼마는 가져가야 하나요?",help:"사장 본인 월급입니다. 이 금액을 빼고도 남는 가게인지 따집니다.",
+  body:function(){var g=el("div","fields");g.appendChild(field(A,"wage","wage","내 월급 (최소)","만원",{step:"50",wide:true,hint:"직접 일하지 않고 맡길 계획이면 0"}));return g}},
+ {q:"매도인이 적은 매출을 얼마나 믿을까요?",help:"매물에 적힌 매출은 파는 사람이 쓴 숫자라 부풀려 있는 경우가 많습니다.",
+  body:function(){return chipGroup([{value:1,label:"그대로 믿는다",sub:"적힌 매출의 100%"},{value:0.8,label:"조금 깎아서 본다",sub:"80% (권장)"},{value:0.7,label:"많이 깎아서 본다",sub:"70%"}],function(v){return A.trust===v},function(v){A.trust=v})}},
+ {q:"채점할 매물을 넣어 주세요",help:"점포라인 매물 화면을 통째로 붙여 넣으면 숫자를 자동으로 읽습니다.",body:listingForm}
+];
+var step=0;
+function show(){
+  save();var s=STEPS[step];
+  $("stepNo").textContent=(step+1)+" / "+STEPS.length;$("bar").style.width=((step+1)/STEPS.length*100)+"%";
+  $("q").textContent=s.q;$("help").textContent=s.help;
+  var b=$("body");b.textContent="";b.appendChild(s.body());
+  $("prev").disabled=step===0;$("next").textContent=step===STEPS.length-1?"채점하기":"다음";
+}
+$("prev").addEventListener("click",function(){if(step>0){step--;show();window.scrollTo(0,0)}});
+$("next").addEventListener("click",function(){
+  if(step<STEPS.length-1){step++;show();window.scrollTo(0,0);return}
+  var miss=[];if(!(draft.inv>0))miss.push("창업비용");if(!(draft.sales>0))miss.push("월매출");if(!(draft.rent>0))miss.push("월세");
+  if(miss.length){$("formErr").textContent=miss.join(", ")+" 칸을 채워 주세요. 이 세 가지가 있어야 채점할 수 있습니다.";return}
+  if(!draft.name)draft.name=(draft.area||"매물")+" "+(A.list.length+1);
+  draft.ind=A.industry;A.list.push(draft);current=draft;draft=blank();save();results();
+});
+$("addMore").addEventListener("click",function(){draft=blank();step=STEPS.length-1;openWizard()});
+$("editCond").addEventListener("click",function(){step=0;openWizard()});
+function openWizard(){$("result").hidden=true;$("wizard").hidden=false;show();window.scrollTo(0,0)}
+
+/* ---------- 채점 ---------- */
+function evaluate(d){
+  var ind=IND[d.ind==null?A.industry:d.ind]||IND[0];
+  var sales=d.sales*A.trust, capMg=100-ind[1]-ind[2];
+  var cm=Math.min(d.mg==null?capMg:d.mg,capMg)/100;
+  var lab=d.lab==null?sales*0.15:d.lab, util=d.util==null?sales*0.03:d.util, etc=d.etc||0;
+  var loan=Math.max(0,d.inv-(A.equity||0)), interest=loan*(A.rate||0)/100/12;
+  var fixed=d.rent+lab+util+etc+interest, wage=A.wage||0;
+  var op=sales*cm-fixed, net=op-wage, bep=(fixed+wage)/cm;
+  var payback=op>0?d.inv/op:Infinity, cap=ind[3]/100;
+  var rentRatio=d.rent/sales, margin=(sales-bep)/sales, netRate=net/sales;
+  var s1=30*clamp(netRate/0.10), s2=op>0?30*clamp((60-payback)/42):0, s3=20*clamp((2*cap-rentRatio)/cap), s4=20*clamp(margin/0.30);
+  return {d:d,ind:ind,sales:sales,cm:cm,op:op,net:net,loan:loan,payback:payback,rentRatio:rentRatio,cap:cap,margin:margin,netRate:netRate,bep:bep,
+    score:Math.round(s1+s2+s3+s4),guess:d.lab==null||d.util==null,cut:d.mg!=null&&d.mg>capMg};
+}
+function grade(sc){return sc>=80?["good","양호","숫자상으로는 해볼 만한 매물입니다. 매출이 사실인지 현장과 장부로 확인하세요."]
+  :sc>=60?["warn","조건부","가능성은 있지만 약한 고리가 있습니다. 아래 주의·위험 항목을 먼저 따져 보세요."]
+  :sc>=40?["warn","주의","이 조건으로는 버티기 빠듯합니다. 권리금·월세를 깎을 수 있는지 협상해 보세요."]
+  :["bad","위험","지금 숫자로는 권하기 어려운 매물입니다."]}
+function position(b,v){var d=b.d;if(v<=d[0])return 0;if(v>=d[10])return 1;for(var i=0;i<10;i++){if(v<=d[i+1]){var w=d[i+1]-d[i];return (i+(w>0?(v-d[i])/w:0))/10}}return 1}
+
+function results(){
+  if(!current)current=A.list[A.list.length-1];
+  var r=evaluate(current),d=current,g=grade(r.score);
+  var h=$("rName");h.textContent=d.name;h.appendChild(el("small","",r.ind[0]+(d.area?" · "+d.area:"")));
+  $("rBox").className="scorebox "+g[0];$("rScore").textContent=r.score;$("rGrade").textContent=g[1];$("rVerdict").textContent=g[2];
+  var nums=$("rNums");nums.textContent="";
+  [["창업비용",eok(d.inv)],["계산에 쓴 월매출",won(r.sales)],["내 월급 빼고 남는 돈",won(r.net)],["투자금 회수",months(r.payback)]].forEach(function(n){var x=el("div","num");x.appendChild(el("span","",n[0]));x.appendChild(el("b","",n[1]));nums.appendChild(x)});
+  var ck=$("rChecks");ck.textContent="";var lab={good:"양호",warn:"주의",bad:"위험"};
+  function add(lv,text){var li=el("li");li.appendChild(el("span","pill "+lv,lab[lv]));li.appendChild(el("span","",text));ck.appendChild(li)}
+  add(r.net>0?(r.netRate>=0.10?"good":"warn"):"bad",r.net>0?"내 월급 "+won(A.wage||0)+"을 가져가고도 월 "+won(r.net)+"이 남습니다.":"내 월급 "+won(A.wage||0)+"을 다 가져가면 월 "+won(-r.net)+"이 모자랍니다.");
+  add(r.payback<=24?"good":r.payback<=42?"warn":"bad",r.op>0?"넣은 돈을 되찾는 데 "+months(r.payback)+" 걸립니다. 임대차 계약 기간보다 짧아야 안전합니다.":"영업이익이 나지 않아 넣은 돈을 되찾을 수 없습니다.");
+  add(r.rentRatio<=r.cap?"good":r.rentRatio<=r.cap*1.5?"warn":"bad","월세가 매출의 "+pct(r.rentRatio)+"입니다. "+r.ind[0]+" 업종은 "+r.ind[3]+"% 이하가 적당합니다.");
+  add(r.margin>=0.30?"good":r.margin>=0.15?"warn":"bad",r.margin>0?"매출이 여기서 "+pct(r.margin)+" 더 줄어도 내 월급은 나옵니다.":"월매출이 "+won(r.bep)+"은 되어야 내 월급이 나옵니다.");
+  if(d.prem>0)add(r.op>0&&d.prem/r.op<=12?"good":r.op>0&&d.prem/r.op<=24?"warn":"bad",r.op>0?"권리금이 월 영업이익의 "+(d.prem/r.op).toFixed(1)+"개월 치입니다. 12개월 이하면 무난하고 24개월을 넘으면 비쌉니다.":"영업이익이 없어 권리금 "+eok(d.prem)+"을 낼 근거가 약합니다.");
+  if(r.loan>0)add(r.loan/d.inv<=0.3?"good":r.loan/d.inv<=0.5?"warn":"bad","대출 "+eok(r.loan)+"이 필요합니다 (창업비용의 "+pct(r.loan/d.inv)+").");
+  if(r.cut)add("warn","매도인이 적은 마진율 "+d.mg+"%는 업종 기준보다 높아 "+pct(r.cm)+"로 낮춰 계산했습니다.");
+  if(r.guess)add("warn","인건비나 공과금이 비어 있어 매출 비율로 추정했습니다. 실제 값을 넣으면 정확해집니다.");
+
+  var ri=rankInfo(d),rl=$("rRankLine"),rk=$("rRank");rl.textContent="";rk.textContent="";
+  if(ri&&!ri.none){
+    var tp=Math.max(1,Math.round(ri.top*100)),lv=ri.top<=0.25?"good":ri.top<=0.5?"warn":"bad";
+    rl.appendChild(el("b","","서울 "+r.ind[0]+" 상권 상위 "+tp+"%"));
+    var pl=el("span","pill "+lv,ri.top<=0.25?"상위 25% 자리":ri.top<=0.5?"중상위":ri.top<=0.75?"중하위":"하위 25%");pl.style.padding="3px 12px";rl.appendChild(pl);
+    [["동네 점포당 월매출",won(ri.avg)],["서울 "+ri.n+"개 동 중",ri.rank+"위"],[d.gu+" 연 폐업률",ri.cl+"% ("+ri.clN+"개 구 중 낮은 순 "+ri.clRank+"위)"],["매도인 매출 ÷ 동네 평균",(d.sales/ri.avg).toFixed(1)+"배"]].forEach(function(n){var x=el("div","num");x.appendChild(el("span","",n[0]));x.appendChild(el("b","",n[1]));rk.appendChild(x)});
+    $("rankNote").textContent=d.gu+" "+d.dong+" 기준, "+(window.SEOUL_LABEL||"최근 4개 분기")+" 서울시 상권분석서비스 추정매출입니다. 카드 결제 기반 추정이고 아주 작은 점포까지 평균에 들어가므로, 팔려고 내놓은 매물의 매출보다 낮게 나오는 것이 보통입니다.";
+    var ratio=d.sales/ri.avg;
+    add(ratio<=2?"good":ratio<=4?"warn":"bad","매도인이 적은 매출이 동네 같은 업종 평균의 "+ratio.toFixed(1)+"배입니다."+(ratio<=2?" 평균과 크게 다르지 않습니다.":ratio<=4?" 카드·현금 매출 자료로 확인하세요.":" 평균과 차이가 매우 큽니다. 장부 없이는 믿기 어렵습니다."));
+  }else{
+    $("rankNote").textContent=!ri?"서울 매물이면 매물 입력 화면에서 구와 동을 고르면 상권 순위가 나옵니다. 서울 밖 지역의 공공데이터는 아직 넣지 못했습니다.":ri.none==="ind"?"이 업종은 서울시 공공데이터에 해당 분류가 없어 상권 순위를 계산할 수 없습니다.":"이 동네에는 해당 업종 점포가 너무 적어 상권 순위를 계산할 수 없습니다.";
+  }
+  var pc=$("posCard");
+  if(BENCH.match(d)){
+    pc.hidden=false;$("posTitle").textContent="같은 동네 시세와 비교 · "+BENCH.label;
+    var box=$("rPos");box.textContent="";
+    var rows=[["월세",BENCH.rent,d.rent,won(d.rent)],["매출 대비 월세",BENCH.rentRatio,d.rent/d.sales,pct(d.rent/d.sales)],["매출 대비 창업비용",BENCH.invSales,d.inv/d.sales,"월매출의 "+(d.inv/d.sales).toFixed(1)+"배"]];
+    if(d.prem!=null)rows.unshift(["권리금",BENCH.prem,d.prem,eok(d.prem)]);
+    rows.forEach(function(x){var p=position(x[1],x[2]);var row=el("div","posrow");row.appendChild(el("b","",x[0]));
+      var tr=el("div","track");var mk=el("i");mk.style.left=(p*100)+"%";tr.appendChild(mk);row.appendChild(tr);
+      row.appendChild(el("span","txt",x[3]+" · "+x[1].n+"건 중 싼 쪽에서 "+Math.max(1,Math.round(p*100))+"% 위치"+(p<=0.25?" (상위 25%, 싼 편)":p>=0.75?" (비싼 편)":" (보통)")));box.appendChild(row)});
+    $("posNote").textContent="왼쪽일수록 싸고 오른쪽일수록 비쌉니다. 매출 대비 항목은 매도인이 적은 매출 그대로 비교했습니다. "+BENCH.date+" 기준 통계입니다.";
+  }else{
+    pc.hidden=false;$("posTitle").textContent="같은 동네 시세와 비교";$("rPos").textContent="";
+    $("posNote").textContent="이 지역·업종의 시세 통계는 아직 없습니다. 지금은 서울 마포구 카페만 비교할 수 있습니다. 같은 동네 매물을 서너 개 넣으면 아래 목록에서 서로 비교할 수 있습니다.";
+  }
+
+  var all=A.list.map(evaluate).sort(function(a,b){return b.score-a.score||b.net-a.net});
+  all.forEach(function(x){x.ri=rankInfo(x.d);x.best=!!(x.ri&&!x.ri.none&&x.ri.top<=0.25&&x.score>=60)});
+  $("listTitle").textContent="내가 넣은 매물 "+all.length+"건";
+  $("listNote").textContent="색칠된 줄은 서울 상권 상위 25% 자리이면서 점수가 60점 이상인 매물입니다. 이름을 누르면 그 매물의 채점 결과를 봅니다.";
+  var tb=$("rList");tb.textContent="";
+  all.forEach(function(x,i){var tr=el("tr",(x.best?"best ":"")+(x.d===current?"now":""));
+    tr.appendChild(el("td","",i+1));
+    var td=el("td"),nb=el("button","",x.d.name);nb.type="button";nb.style.color="var(--accent)";nb.style.fontSize="13.5px";nb.addEventListener("click",function(){current=x.d;results()});td.appendChild(nb);tr.appendChild(td);
+    [x.score+"점",x.ri&&!x.ri.none?"상위 "+Math.max(1,Math.round(x.ri.top*100))+"%":"-",eok(x.d.inv),won(x.net),months(x.payback)].forEach(function(c){tr.appendChild(el("td","",c))});
+    var del=el("td"),db=el("button","","삭제");db.type="button";db.addEventListener("click",function(){var k=A.list.indexOf(x.d);if(k>=0)A.list.splice(k,1);save();if(!A.list.length){current=null;draft=blank();step=STEPS.length-1;openWizard();return}if(current===x.d)current=null;results()});del.appendChild(db);tr.appendChild(del);
+    tb.appendChild(tr)});
+  $("wizard").hidden=true;$("result").hidden=false;window.scrollTo(0,0);
+}
+window.__test={parse:parseListing,evaluate:evaluate,A:A,rank:rankInfo,GUS:GUS};
+if(BD)$("benchFoot").textContent="시세 비교는 "+BD.date+" "+BD.label+" "+BD.total+"건의 통계이며, 다른 지역·업종 시세는 아직 없습니다.";
+if(A.list.length){current=A.list[A.list.length-1];results()}else show();
+})();
+</script>
+</body>
+</html>
